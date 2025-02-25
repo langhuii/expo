@@ -84,16 +84,14 @@ export default function EmotionScreen({ navigation }) {
         onChangeText={(text) => setEmotion(text)}
       />
 
-      {/* 다음 버튼 (입력값 없을 시 비활성화) */}
+      {/* ✅ 다음 버튼 (입력값 없을 시 비활성화) */}
       <TouchableOpacity 
         style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]} 
         onPress={() => navigation.navigate("NextScreen", { userEmotion: emotion })}
         disabled={emotion.trim() === ""}
       >
-        <Text style={styles.nextButtonText}>다음</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-  <Ionicons name="chevron-back-outline" size={20} color="black" />
-</TouchableOpacity>
+        <Text style={styles.nextButtonText}>     다음</Text>
+        <Ionicons name="chevron-forward-outline" size={20} color="black" style={styles.arrowIcon} />
       </TouchableOpacity>
     </View>
   );
@@ -153,17 +151,24 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     position: "absolute",
-    bottom: 30, // 아래쪽에서 30px 떨어짐
+    bottom: 30, 
     width: "50%",
     borderRadius: 100,
     paddingVertical: 15,
-    alignItems: "center",
+    flexDirection: "row", // 아이콘과 글자 수평 정렬
+    justifyContent: "center", // 중앙 정렬
+    alignItems: "center", // 세로 정렬 맞춤
     backgroundColor: "#FCE8A8",
     borderColor: "#ccc",
   },
   nextButtonText: {
     fontSize: 18,
     fontWeight: "bold",
+    marginRight: 10, // 아이콘과 간격을 조정
+  },
+  arrowIcon: {
+    width: 20,
+    height: 20,
   },
   disabledButton: {
     backgroundColor: "#ddd", // 입력값이 없을 때 버튼 색상 변경
