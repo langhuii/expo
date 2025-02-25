@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
-import { ProgressBar } from "../components/ProgressBar";
- // 감정 통계 그래프 컴포넌트
+import { ProgressBar } from "../components/ProgressBar"; // 감정 통계 그래프 컴포넌트
 import { Ionicons } from "@expo/vector-icons";
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* 프로필 카드 */}
@@ -13,7 +12,7 @@ export default function HomeScreen() {
         <Text style={styles.welcomeText}>
           <Text style={styles.italicText}>Brian K</Text> 님 반가워요 !
         </Text>
-        <TouchableOpacity style={styles.analysisButton}>
+        <TouchableOpacity style={styles.analysisButton} onPress={() => navigation.navigate("Emotion")}>
           <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
           <Ionicons name="arrow-forward" size={18} color="black" />
         </TouchableOpacity>
@@ -28,7 +27,6 @@ export default function HomeScreen() {
         <ProgressBar color="#A9DFBF" progress={0.3} />
       </View>
 
-    
     </View>
   );
 }
@@ -97,18 +95,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
-  navBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    position: "absolute",
-    bottom: 0,
-    paddingVertical: 10,
-    backgroundColor: "#FDFBF5",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    elevation: 5,
-  },
+ 
 });
