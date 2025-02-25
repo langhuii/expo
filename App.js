@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import HomeScreen from "./screens/HomeScreen";
+import CalendarScreen from "./screens/CalendarScreen";
 import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -47,12 +48,22 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator>
+        {/* 🏠 홈 화면 */}
         <Tab.Screen 
           name="Home" 
           component={HomeScreen} 
           options={{
             tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
           }} 
+        />
+        
+         {/* 📅 캘린더 화면 */}
+         <Tab.Screen
+          name="Calendar"
+          component={CalendarScreen}
+          options={{
+            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+          }}
         />
       </Tab.Navigator>
     </NavigationContainer>

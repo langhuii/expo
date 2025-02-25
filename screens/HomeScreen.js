@@ -28,14 +28,7 @@ export default function HomeScreen() {
         <ProgressBar color="#A9DFBF" progress={0.3} />
       </View>
 
-      {/* 하단 네비게이션 바 */}
-      <View style={styles.navBar}>
-        <Ionicons name="home-outline" size={28} />
-        <Ionicons name="calendar-outline" size={28} />
-        <Ionicons name="heart-outline" size={28} />
-        <Ionicons name="musical-notes-outline" size={28} />
-        <Ionicons name="person-outline" size={28} />
-      </View>
+    
     </View>
   );
 }
