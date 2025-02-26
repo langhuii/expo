@@ -10,6 +10,7 @@ import HomeScreen from "./screens/HomeScreen";
 import EmotionScreen from "./screens/EmotionScreen";
 import CalendarScreen from "./screens/CalendarScreen";
 import FeedScreen from "./screens/FeedScreen";
+import WriteScreen from './screens/WriteScreen';
 
 console.log("앱 실행됨"); // 앱 실행 확인용 로그
 
@@ -74,10 +75,12 @@ export default function App() {
   }
 
   return (
+    
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Emotion" component={EmotionScreen} />
+        <Stack.Screen name="WriteScreen" component={WriteScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

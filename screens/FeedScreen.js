@@ -222,17 +222,39 @@ const FeedScreen = () => {
         </View>
       </Modal>
 
+      <TouchableOpacity
+  onPress={() => navigation.navigate('WriteScreen')} // 글 작성 화면으로 이동
+  style={{
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#FFA500',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+    zIndex: 10, // ✅ 다른 요소 위에 배치
+  }}
+>
+  <Icon name="add" size={30} color="white" />
+</TouchableOpacity>
+
 {/* 🔥 댓글 모달 */}
 <Modal visible={selectedPostId !== null} transparent={true} animationType="slide">
   <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
     <View style={{backgroundColor: 'white', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.5 }}>
     <View style={{ maxHeight: height * 0.4, marginTop: 10 }}>
   {/* 닫기 버튼 */}
-  <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -27, right: -10, zIndex: 2}}
+  <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -26, right: -10, zIndex: 2}}
        >
        <Icon name="close" size={25} color="black" />
       </TouchableOpacity>
-
+  
   <FlatList
     data={comments[selectedPostId] || []}
     keyExtractor={(item, index) => index.toString()}
