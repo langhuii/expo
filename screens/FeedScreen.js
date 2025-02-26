@@ -23,6 +23,15 @@ const FeedScreen = () => {
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState({});
 
+  /*댓글삭제*/
+  const handleDeleteComment = (index) => {
+    setComments(prevComments => ({
+      ...prevComments,
+      [selectedPostId]: prevComments[selectedPostId].filter((_, i) => i !== index) // 클릭한 댓글만 제외
+    }));
+  };
+  
+
   /** 📌 16:9 비율로 사진 촬영하여 스토리 추가 */
   const handleAddStory = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -105,13 +114,13 @@ const FeedScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: '#FAE3B4' }}>
       {/* 상단 헤더 */}
-      <View style={{ backgroundColor: '#FFD59E', padding: 15, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, alignItems: 'center' }}>
+      <View style={{ backgroundColor: '#FFD59E', padding: 15, alignItems: 'center' }}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>SNS</Text>
       </View>
 
       {/* 상단 스토리 영역 (최신 스토리만 표시) */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 10 }}>
-        <TouchableOpacity onPress={handleAddStory} style={{ marginRight: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 10, height:78 }}>
+        <TouchableOpacity onPress={handleAddStory} style={{ marginRight: 10}}>
           <Icon name="add-circle" size={50} color="#FFA500" />
         </TouchableOpacity>
         {stories.length > 0 && (
@@ -123,25 +132,59 @@ const FeedScreen = () => {
 
       {/* 피드 목록 */}
       <FlatList
-        data={posts}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={{ margin: 10, padding: 15, backgroundColor: '#FFF8DC', borderRadius: 10 }}>
-            <Image source={item.image} style={{paddingLeft:50, paddingRight:50, width: width - 20, height: (width - 20) * 1 / 1, borderRadius: 10, marginVertical: 10, alignSelf: 'center' }} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
-              <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
-                <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
-                <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => handleCommentPress(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Icon name="chatbubble-outline" size={24} color="black" />
-                <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || item.comments}</Text>
-              </TouchableOpacity>
-            </View>
+  data={posts}
+  keyExtractor={item => item.id}
+  renderItem={({ item }) => (
+    <View style={{ margin: 20, padding: 15, backgroundColor: '#FFF8DC', minHeight: 300, borderRadius: 10 }}>
+      
+      {/* 이미지 컨테이너 */}
+      <View style={{ position: 'relative' }}>
+        
+        {/* ✅ 작성자 정보 (프로필 + 이름 + 날짜) */}
+        <View style={{ 
+          position: 'absolute', 
+          top: -10, 
+          left: 1, 
+          backgroundColor: 'rgba(255, 223, 186, 0.9)', // 반투명 배경
+          borderRadius: 20, 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          paddingVertical: 5,
+          paddingHorizontal: 10 
+        }}>
+          {/* 프로필 이미지 */}
+          <Image source={item.profile} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
+          
+          {/* 사용자명 및 날짜 */}
+          <View>
+            <Text style={{ fontWeight: 'bold', fontSize: 14 }}>{item.user}</Text>
+            <Text style={{ color: 'gray', fontSize: 12 }}>{item.date}</Text>
           </View>
-        )}
-      />
+        </View>
+
+        {/* ✅ 게시글 이미지 */}
+        <Image 
+          source={item.image} 
+          style={{ top:40, paddingLeft:50, paddingRight:50, width: '100%', height: 250, alignItems: 'center', borderRadius: 10 }} 
+        />
+      </View>
+
+      {/* 좋아요 & 댓글 버튼 */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
+        <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+          <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
+          <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => handleCommentPress(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Icon name="chatbubble-outline" size={24} color="black" />
+          <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || item.comments}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )}
+/>
+
 
       {/* 🔥 전체 화면 스토리 모달 */}
       <Modal visible={selectedStoryIndex !== null} transparent={true} animationType="fade">
@@ -179,25 +222,57 @@ const FeedScreen = () => {
         </View>
       </Modal>
 
-      {/* 🔥 댓글 모달 */}
-      <Modal visible={selectedPostId !== null} transparent={true} animationType="slide">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: 'white', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.5 }}>
-            <TouchableOpacity onPress={handleCloseCommentModal} style={{ alignSelf: 'flex-end' }}>
-              <Icon name="close" size={30} color="black" />
-            </TouchableOpacity>
-            <TextInput
-              value={commentText}
-              onChangeText={setCommentText}
-              placeholder="댓글을 입력하세요..."
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 10, marginBottom: 10 }}
-            />
-            <TouchableOpacity onPress={handleAddComment}>
-              <Text>댓글 추가</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+{/* 🔥 댓글 모달 */}
+<Modal visible={selectedPostId !== null} transparent={true} animationType="slide">
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+    <View style={{backgroundColor: 'white', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.5 }}>
+    <View style={{ maxHeight: height * 0.4, marginTop: 10 }}>
+  {/* 닫기 버튼 */}
+  <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -27, right: -10, zIndex: 2}}
+       >
+       <Icon name="close" size={25} color="black" />
+      </TouchableOpacity>
+
+  <FlatList
+    data={comments[selectedPostId] || []}
+    keyExtractor={(item, index) => index.toString()}
+    renderItem={({ item, index }) => (
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: 10, 
+        borderBottomWidth: 1, 
+        borderBottomColor: '#eee' 
+      }}>
+        {/* 댓글 내용 */}
+        <Text>{item}</Text>
+
+        {/* 삭제 버튼 */}
+        <TouchableOpacity onPress={() => handleDeleteComment(index)}>
+          <Icon name="trash" size={20} color="red" />
+        </TouchableOpacity>
+      </View>
+    )}
+  />
+</View>
+      {/* 댓글 입력 필드 */}
+      <TextInput
+        value={commentText}
+        onChangeText={setCommentText}
+        placeholder="댓글을 입력하세요..."
+        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 10, marginBottom: 10 }}
+      />
+
+      {/* 댓글 추가 버튼 */}
+      <TouchableOpacity onPress={handleAddComment} style={{ alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: 7, borderRadius: 10, marginLeft: 290, width:60 }}>
+        <Text style={{ color: 'white', fontWeight: 'bold' }}>댓글 추가</Text>
+      </TouchableOpacity>
+
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 };
