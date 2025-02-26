@@ -5,9 +5,9 @@ import Svg, { Rect } from "react-native-svg";
 export const ProgressBar = ({ color, progress }) => {
   return (
     <View style={styles.container}>
-      <Svg width="100%" height="10">
-        <Rect x="0" y="0" width="100%" height="10" fill="#E0E0E0" rx="5" />
-        <Rect x="0" y="0" width={`${progress * 100}%`} height="10" fill={color} rx="5" />
+      <Svg width="100%" height="20">
+        <Rect x="0" y="0" width="100%" height="20" fill="#E0E0E0" rx="10" />
+        <Rect x="0" y="0" width={`${progress * 100}%`} height="20" fill={color} rx="10" />
       </Svg>
     </View>
   );

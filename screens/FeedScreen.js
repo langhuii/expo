@@ -14,8 +14,8 @@ const { width, height } = Dimensions.get('window');
 const FeedScreen = () => {
   const navigation = useNavigation();
   const [posts, setPosts] = useState([
-    { id: '1', user: 'Brian K', date: '2024.12.19', likes: 2400, comments: 10000, image: require('../assets/post1.jpg'), profile: require('../assets/profile1.jpg'), liked: false },
-    { id: '2', user: 'Felix', date: '2024.12.19', likes: 1800, comments: 7800, image: require('../assets/post2.jpg'), profile: require('../assets/profile2.jpg'), liked: false },
+    { id: '1', user: 'Brian K', date: '2024.12.19', likes: 2400, comments: 0, image: require('../assets/post1.jpg'), profile: require('../assets/profile1.jpg'), liked: false },
+    { id: '2', user: 'Felix', date: '2024.12.19', likes: 1800, comments: 0, image: require('../assets/post2.jpg'), profile: require('../assets/profile2.jpg'), liked: false },
   ]);
   const [stories, setStories] = useState([]);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(null);
@@ -127,7 +127,7 @@ const FeedScreen = () => {
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={{ margin: 10, padding: 15, backgroundColor: '#FFF8DC', borderRadius: 10 }}>
-            <Image source={item.image} style={{ width: width - 20, height: (width - 20) * 3 / 4, borderRadius: 10, marginVertical: 10 }} />
+            <Image source={item.image} style={{paddingLeft:50, paddingRight:50, width: width - 20, height: (width - 20) * 1 / 1, borderRadius: 10, marginVertical: 10, alignSelf: 'center' }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
               <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
                 <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
