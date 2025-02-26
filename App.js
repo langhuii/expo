@@ -9,6 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import HomeScreen from "./screens/HomeScreen";
 import EmotionScreen from "./screens/EmotionScreen";
 import CalendarScreen from "./screens/CalendarScreen";
+import FeedScreen from "./screens/FeedScreen";
 
 console.log("앱 실행됨"); // 앱 실행 확인용 로그
 
@@ -39,7 +40,6 @@ export default function App() {
     prepare();
   }, []);
 
-  // 🔹 스플래시 화면이 끝나기 전까지는 아무것도 렌더링하지 않음
   if (!isReady) {
     return (
       <View style={styles.splashContainer}>
@@ -48,25 +48,26 @@ export default function App() {
     );
   }
 
-  // 🔹 Stack Navigator 내부에 Tab Navigator 포함
   function MainTabs() {
     return (
       <Tab.Navigator screenOptions={{ headerShown: false }}>
-        {/* 🏠 홈 화면 */}
         <Tab.Screen 
           name="Home" 
           component={HomeScreen} 
           options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
-          }} 
+            tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,}} 
         />
-        {/* 📅 캘린더 화면 */}
+        <Tab.Screen
+          name="Feed"
+          component={FeedScreen}
+          options={{
+            tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" size={size} color={color} />,}} 
+        />
         <Tab.Screen
           name="Calendar"
           component={CalendarScreen}
           options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-          }}
+            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,}} 
         />
       </Tab.Navigator>
     );
@@ -75,16 +76,13 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* 📌 Tab Navigator 포함 */}
         <Stack.Screen name="Main" component={MainTabs} />
-        {/* 😊 감정 분석 화면 */}
         <Stack.Screen name="Emotion" component={EmotionScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-// ✅ 스타일 수정 (애니메이션 크기 및 정렬)
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
