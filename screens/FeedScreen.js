@@ -6,11 +6,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-
-
-
-
-
 const FeedScreen = () => {
   const navigation = useNavigation();
   const [posts, setPosts] = useState([

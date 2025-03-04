@@ -1,14 +1,31 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { ProgressBar } from "../components/ProgressBar"; // 감정 통계 그래프 컴포넌트
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ 프로필 이미지 저장/불러오기용
 
 export default function HomeScreen({ navigation }) {
+  const [profileImage, setProfileImage] = useState(null);
+
+  // ✅ AsyncStorage에서 프로필 이미지 불러오기
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      const savedImage = await AsyncStorage.getItem("profileImage");
+      if (savedImage) {
+        setProfileImage(savedImage); // 저장된 이미지 URL이 있으면 적용
+      }
+    };
+    loadProfileImage();
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* 프로필 카드 */}
       <View style={styles.profileCard}>
-        <Image source={require("../assets/profile.jpg")} style={styles.profileImage} />
+        <Image 
+          source={profileImage ? { uri: profileImage } : require("../assets/profile.jpg")} 
+          style={styles.profileImage} 
+        />
         <Text style={styles.welcomeText}>
           <Text style={styles.italicText}>Brian K</Text> 님 반가워요 !
         </Text>
@@ -26,7 +43,6 @@ export default function HomeScreen({ navigation }) {
         <ProgressBar color="#F9E79F" progress={0.5} />
         <ProgressBar color="#A9DFBF" progress={0.3} />
       </View>
-
     </View>
   );
 }
@@ -100,5 +116,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
- 
 });
+

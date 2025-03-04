@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, TextInput, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { globalStyles } from "../styles/globalStyles"; // 글로벌 스타일 불러오기
-import * as ImagePicker from "expo-image-picker"; // 갤러리에서 사진 선택 기능 추가
+import { globalStyles } from "../styles/globalStyles";
+import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "@react-navigation/native"; // ✅ 네비게이션 추가
 
-export default function MemberProfileScreen({ navigation }) {
+export default function MemberProfileScreen() {
+  const navigation = useNavigation(); // ✅ 네비게이션 객체 가져오기
   const [name, setName] = useState("Brian K");
-  const [profileImage, setProfileImage] = useState(require("../assets/jieun.jpeg")); // 기본 프로필 이미지는 김지은씨씨
+
+  // ✅ 이미지 상태: 초기값을 null로 두고, 나중에 uri를 설정
+  const [profileImage, setProfileImage] = useState(null);
 
   // ✅ 갤러리에서 사진 선택하는 함수
   const pickImage = async () => {
@@ -19,12 +23,12 @@ export default function MemberProfileScreen({ navigation }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // 1:1 비율 유지
-      quality: 1, // 최고 품질 설정
+      aspect: [1, 1], 
+      quality: 1,
     });
 
     if (!result.canceled) {
-      setProfileImage({ uri: result.assets[0].uri }); // ✅ 선택한 이미지로 변경
+      setProfileImage({ uri: result.assets[0].uri });
     }
   };
 
@@ -34,7 +38,10 @@ export default function MemberProfileScreen({ navigation }) {
         {/* 🔹 프로필 이미지 */}
         <View style={styles.profileContainer}>
           <TouchableOpacity style={styles.profileImageContainer} onPress={pickImage}>
-            <Image source={profileImage} style={styles.profileImage} />
+            <Image 
+              source={profileImage ? profileImage : require("../assets/jieun.jpeg")} 
+              style={styles.profileImage} 
+            />
             <View style={styles.addIcon}>
               <Ionicons name="camera-outline" size={25} color="white" />
             </View>
@@ -59,15 +66,19 @@ export default function MemberProfileScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
 
-        {/* 🔹 포인트트 */}    
+          {/* 🔹 포인트 */}
           <TouchableOpacity style={styles.card}>
             <Text style={[styles.cardText, globalStyles.text]}>
               {name} 님의 현재 포인트는 100 pt 입니다.
             </Text>
             <Text style={[styles.detailText, globalStyles.textBold]}>▶ 상세보기</Text>
           </TouchableOpacity>
-         {/* 🔹 그룹룹 */}
-          <TouchableOpacity style={styles.card}>
+
+          {/* 🔹 그룹 페이지 이동 버튼 */}
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate("GroupListScreen")} // ✅ "GroupListScreen" → "GroupList"로 변경
+          >
             <Text style={[styles.cardText, globalStyles.text]}>
               {name} 님의 Group을 확인하세요
             </Text>
@@ -103,7 +114,7 @@ const styles = StyleSheet.create({
     borderColor: "gray",
     top: 100,
   },
-  addIcon: {  //카메라 스타일일
+  addIcon: {
     position: "absolute",
     bottom: -100,
     right: -8,
@@ -148,4 +159,4 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 5,
   },
-});
+}); 

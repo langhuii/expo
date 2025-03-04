@@ -14,11 +14,48 @@ import CalendarScreen from "./screens/CalendarScreen";
 import FeedScreen from "./screens/FeedScreen";
 import WriteScreen from "./screens/WriteScreen";
 import MemberProfileScreen from "./screens/MemberProfileScreen";
+import GroupListScreen from "./screens/GroupListScreen"; 
 
 SplashScreen.preventAutoHideAsync(); // 스플래시 화면 유지
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// ✅ **하단 탭 네비게이션**
+function MainTabs() {
+  return (
+    <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+        }} 
+      />
+      <Tab.Screen
+        name="Feed"
+        component={FeedScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" size={size} color={color} />,
+        }} 
+      />
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+        }} 
+      />
+      <Tab.Screen
+        name="Profile"
+        component={MemberProfileScreen}  
+        options={{
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+        }} 
+      />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -54,48 +91,15 @@ export default function App() {
     );
   }
 
-  // 📌 하단 탭 네비게이션
-  function MainTabs() {
-    return (
-      <Tab.Navigator screenOptions={{ headerShown: false }}>
-        <Tab.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
-          }} 
-        />
-        <Tab.Screen
-          name="Feed"
-          component={FeedScreen}
-          options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" size={size} color={color} />,
-          }} 
-        />
-        <Tab.Screen
-          name="Calendar"
-          component={CalendarScreen}
-          options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-          }} 
-        />
-        <Tab.Screen
-          name="Profile"
-          component={MemberProfileScreen}
-          options={{
-            tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
-          }} 
-        />
-      </Tab.Navigator>
-    );
-  }
-
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={MainTabs} />
+        {/* ✅ MainTabs는 함수 호출(X) → 함수 참조(O)로 전달해야 함 */}
+        <Stack.Screen name="Main" component={MainTabs} /> 
         <Stack.Screen name="Emotion" component={EmotionScreen} />
         <Stack.Screen name="WriteScreen" component={WriteScreen} />
+        <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} /> 
+        {/* ✅ "그룹 확인" 버튼 클릭 시 이동 */}
       </Stack.Navigator>
     </NavigationContainer>
   );
