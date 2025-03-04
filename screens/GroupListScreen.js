@@ -1,41 +1,50 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native"; // ✅ 네비게이션 추가
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
-const groups = [
-  {
-    id: "1",
-    name: "🏃‍♂️🏃‍♀️러닝크루🏃‍♂️🏃‍♀️",
-    tags: ["#🏃‍♂️🏃‍♀️러닝크루", "#무기력"],
-    days: 100,
-    image: require("../assets/running.jpg"), 
-  },
-  {
-    id: "2",
-    name: "YTC 양천 테니스 클럽",
-    tags: ["#테니스", "#테니스클럽", "#기쁨"],
-    days: 14,
-    image: require("../assets/tennis.jpg"),
-  },
-  {
-    id: "3",
-    name: "북 투게더📖",
-    tags: ["#북_투게더📖", "#독서모임", "#평온"],
-    days: 10,
-    image: require("../assets/book.jpg"),
-  },
-  {
-    id: "4",
-    name: "영화 소담회",
-    tags: ["#소담회", "#영화감상🍿🎥", "#감동"],
-    days: 365,
-    image: require("../assets/movie.jpg"),
-  },
-];
+const GroupListScreen = ({ route }) => {
+  const navigation = useNavigation();
+  const [groups, setGroups] = useState([
+    {
+      id: "1",
+      name: "🏃‍♂️🏃‍♀️러닝크루🏃‍♂️🏃‍♀️",
+      tags: ["#🏃‍♂️🏃‍♀️러닝크루", "#무기력"],
+      days: 100,
+      image: require("../assets/running.jpg"),
+    },
+    {
+      id: "2",
+      name: "YTC 양천 테니스 클럽",
+      tags: ["#테니스", "#테니스클럽", "#기쁨"],
+      days: 14,
+      image: require("../assets/tennis.jpg"),
+    },
+    {
+        id: "3",
+        name: "북 투게더📖",
+        tags: ["#북_투게더📖", "#독서모임", "#평온"],
+        days: 10,
+        image: require("../assets/book.jpg"),
+      },
+      {
+        id: "4",
+        name: "영화 소담회",
+        tags: ["#소담회", "#영화감상🍿🎥", "#감동"],
+        days: 365,
+        image: require("../assets/movie.jpg"),
+      },
+  ]);
 
-const GroupListScreen = () => {
-  const navigation = useNavigation(); // ✅ 네비게이션 객체 추가
+  // ✅ 새로운 그룹이 추가되면 리스트 업데이트
+  useFocusEffect(
+    React.useCallback(() => {
+      if (route.params?.newGroup) {
+        setGroups((prevGroups) => [route.params.newGroup, ...prevGroups]);
+        navigation.setParams({ newGroup: null }); // 중복 추가 방지
+      }
+    }, [route.params?.newGroup])
+  );
 
   return (
     <View style={styles.container}>
@@ -48,6 +57,7 @@ const GroupListScreen = () => {
         <View style={{ width: 30 }} /> {/* 빈 공간 */}
       </View>
 
+      {/* 🔹 그룹 리스트 */}
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
@@ -55,29 +65,33 @@ const GroupListScreen = () => {
           <View style={styles.card}>
             <View style={styles.textContainer}>
               <Text style={styles.groupName}>{item.name}</Text>
-
               <Text style={styles.tags}>
                 사용 가능한 태그{"\n"}
                 {item.tags.map((tag, index) => (
                   <Text key={index} style={styles.tagText}>{tag} </Text>
                 ))}
               </Text>
-
               <Text style={styles.daysText}>
-                이 그룹과 함께한지 <Text style={styles.bold}>{`'${item.days}'`}</Text> 일 째 입니다.
+                이 그룹과 함께한지 <Text style={styles.bold}>{`${item.days}`}</Text> 일 째 입니다.
               </Text>
             </View>
             <Image source={item.image} style={styles.groupImage} />
           </View>
         )}
       />
-      <TouchableOpacity style={styles.addButton}>
+
+      {/* 🔹 그룹 만들기로 이동 (+ 버튼) */}
+      <TouchableOpacity 
+        style={styles.addButton} 
+        onPress={() => navigation.navigate("MakeGroup")}
+      >
         <Ionicons name="add" size={30} color="black" />
       </TouchableOpacity>
     </View>
   );
 };
 
+// ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -105,7 +119,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     width: "98%",
     alignSelf: "center",
-    height: 150,
+    height: 150, // ✅ 카드 크기 조정 (세로 길게)
   },
   textContainer: {
     flex: 1,

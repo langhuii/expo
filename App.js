@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text,Image, StyleSheet } from "react-native";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
@@ -15,6 +15,7 @@ import FeedScreen from "./screens/FeedScreen";
 import WriteScreen from "./screens/WriteScreen";
 import MemberProfileScreen from "./screens/MemberProfileScreen";
 import GroupListScreen from "./screens/GroupListScreen"; 
+import MakeGroupScreen from "./screens/MakeGroupScreen"; 
 
 SplashScreen.preventAutoHideAsync(); // 스플래시 화면 유지
 
@@ -86,10 +87,17 @@ export default function App() {
   if (!isReady) {
     return (
       <View style={styles.splashContainer}>
+        {/* 🌟 스플래시 이미지 */}
+        <Image 
+          source={require("./assets/test.png")} 
+        />
+        
+        {/* 🌟 기존 텍스트 */}
         <Text style={styles.text}>스플래시 화면</Text>
       </View>
     );
   }
+  
 
   return (
     <NavigationContainer>
@@ -98,7 +106,8 @@ export default function App() {
         <Stack.Screen name="Main" component={MainTabs} /> 
         <Stack.Screen name="Emotion" component={EmotionScreen} />
         <Stack.Screen name="WriteScreen" component={WriteScreen} />
-        <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} /> 
+        <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} />
+        <Stack.Screen name="MakeGroup" component={MakeGroupScreen} options={{ title: "그룹 만들기" }} />
         {/* ✅ "그룹 확인" 버튼 클릭 시 이동 */}
       </Stack.Navigator>
     </NavigationContainer>
