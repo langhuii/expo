@@ -3,6 +3,33 @@ import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, Dimensions, 
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  menuContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  menuItem: {
+    paddingVertical: 10,
+  },
+  menuText: {
+    fontSize: 16,
+  },
+});
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,6 +44,8 @@ const FeedScreen = () => {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState({});
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   /*댓글삭제*/
   const handleDeleteComment = (index) => {
@@ -26,6 +55,17 @@ const FeedScreen = () => {
     }));
   };
   
+ // ✅ 프로필 박스를 클릭하면 메뉴가 뜨도록 설정
+ const handleProfilePress = (user) => {
+  setSelectedUser(user);  // 선택한 사용자 정보 저장
+  setMenuVisible(true);  // 메뉴 열기
+};
+
+// ✅ 모달 닫기 함수
+const handleCloseMenu = () => {
+  setMenuVisible(false);
+  setSelectedUser(null);
+};
 
   /** 📌 16:9 비율로 사진 촬영하여 스토리 추가 */
   const handleAddStory = async () => {
@@ -135,51 +175,68 @@ const FeedScreen = () => {
       {/* 이미지 컨테이너 */}
       <View style={{ position: 'relative' }}>
         
-        {/* ✅ 작성자 정보 (프로필 + 이름 + 날짜) */}
-        <View style={{ 
-          position: 'absolute', 
-          top: -10, 
-          left: 1, 
-          backgroundColor: 'rgba(255, 223, 186, 0.9)', // 반투명 배경
-          borderRadius: 20, 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          paddingVertical: 5,
-          paddingHorizontal: 10 
-        }}>
-          {/* 프로필 이미지 */}
+        {/* ✅ 프로필 박스 (클릭 가능하도록 수정) */}
+        <TouchableOpacity
+          onPress={() => handleProfilePress(item)}
+          style={{ 
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(255, 223, 186, 0.9)',
+            borderRadius: 20,
+            paddingVertical: 5,
+            paddingHorizontal: 10,
+            alignSelf: 'flex-start'
+          }}
+        >
           <Image source={item.profile} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
-          
-          {/* 사용자명 및 날짜 */}
           <View>
             <Text style={{ fontWeight: 'bold', fontSize: 14 }}>{item.user}</Text>
             <Text style={{ color: 'gray', fontSize: 12 }}>{item.date}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* ✅ 게시글 이미지 */}
         <Image 
           source={item.image} 
-          style={{ top:40, paddingLeft:50, paddingRight:50, width: '100%', height: 250, alignItems: 'center', borderRadius: 10 }} 
+          style={{ width: '100%', height: 250, borderRadius: 10, marginTop: 10 }} 
         />
+
+        {/* ✅ 좋아요 & 댓글 버튼 (원본 유지) */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
+          <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+            <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
+            <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => handleCommentPress(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="chatbubble-outline" size={24} color="black" />
+            <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || item.comments}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* 좋아요 & 댓글 버튼 */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
-        <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
-          <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
-          <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
+      {/* ✅ 프로필 클릭 시 뜨는 메뉴 모달 */}
+      <Modal visible={menuVisible} transparent={true} animationType="fade" onRequestClose={handleCloseMenu}>
+        <TouchableOpacity style={styles.modalBackground} onPress={handleCloseMenu}>
+          <View style={styles.menuContainer}>
+            {selectedUser && (
+              <>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>{selectedUser.user}</Text>
+                <TouchableOpacity style={styles.menuItem} onPress={() => alert(`${selectedUser.user}님의 프로필 보기`)}>
+                  <Text style={styles.menuText}>사용자 프로필 보기</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.menuItem} onPress={() => alert(`${selectedUser.user}님에게 쪽지 보내기`)}>
+                  <Text style={styles.menuText}>쪽지 보내기</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </TouchableOpacity>
+      </Modal>
 
-        <TouchableOpacity onPress={() => handleCommentPress(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Icon name="chatbubble-outline" size={24} color="black" />
-          <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || item.comments}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </View> // ✅ View 태그 닫는 위치 수정
   )}
-/>
-
+/> // ✅ FlatList 태그 올바르게 닫기
 
       {/* 🔥 전체 화면 스토리 모달 */}
       <Modal visible={selectedStoryIndex !== null} transparent={true} animationType="fade">
