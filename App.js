@@ -7,6 +7,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 
+
 // 📌 화면 컴포넌트 불러오기
 import HomeScreen from "./screens/HomeScreen";
 import EmotionScreen from "./screens/EmotionScreen";
@@ -16,6 +17,11 @@ import WriteScreen from "./screens/WriteScreen";
 import MemberProfileScreen from "./screens/MemberProfileScreen";
 import GroupListScreen from "./screens/GroupListScreen"; 
 import MakeGroupScreen from "./screens/MakeGroupScreen"; 
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+
+
 
 SplashScreen.preventAutoHideAsync(); // 스플래시 화면 유지
 
@@ -97,22 +103,27 @@ export default function App() {
       </View>
     );
   }
-  
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* ✅ MainTabs는 함수 호출(X) → 함수 참조(O)로 전달해야 함 */}
-        <Stack.Screen name="Main" component={MainTabs} /> 
+        {/* ✅ MainTabs는 함수 호출(X) → 함수 참조(O)로 전달해야 함 */} 
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Emotion" component={EmotionScreen} />
         <Stack.Screen name="WriteScreen" component={WriteScreen} />
         <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} />
         <Stack.Screen name="MakeGroup" component={MakeGroupScreen} options={{ title: "그룹 만들기" }} />
+        
         {/* ✅ "그룹 확인" 버튼 클릭 시 이동 */}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
 
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
