@@ -54,7 +54,7 @@ const WriteScreen = () => {
       />
 
       {/* 하단 툴바 (사진, 텍스트 옵션 등) */}
-      <View style={{ top: 300, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#ccc' }}>
+      <View style={{ top: 650, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#ccc' }}>
         <TouchableOpacity>
           <Icon name="camera" size={25} color="black" />
         </TouchableOpacity>

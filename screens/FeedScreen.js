@@ -77,7 +77,7 @@ const handleCloseMenu = () => {
 
     let result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      aspect: [16, 9],  // 🔥 16:9 비율 적용
+      aspect: [9, 16],  // 🔥 16:9 비율 적용
       quality: 1,
     });
 
@@ -198,7 +198,7 @@ const handleCloseMenu = () => {
         {/* ✅ 게시글 이미지 */}
         <Image 
           source={item.image} 
-          style={{ width: '100%', height: 250, borderRadius: 10, marginTop: 10 }} 
+          style={{ width: '100%', height: 1000, borderRadius: 10, marginTop: 10 }} 
         />
 
         {/* ✅ 좋아요 & 댓글 버튼 (원본 유지) */}
@@ -304,7 +304,7 @@ const handleCloseMenu = () => {
   {/* 닫기 버튼 */}
   <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -26, right: -10, zIndex: 2}}
        >
-       <Icon name="close" size={25} color="black" />
+       <Icon name="close" size={20} color="black" />
       </TouchableOpacity>
   
   <FlatList
@@ -339,8 +339,8 @@ const handleCloseMenu = () => {
       />
 
       {/* 댓글 추가 버튼 */}
-      <TouchableOpacity onPress={handleAddComment} style={{ alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: 7, borderRadius: 10, marginLeft: 290, width:60 }}>
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>댓글 추가</Text>
+      <TouchableOpacity onPress={handleAddComment} style={{ alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: 7, borderRadius: 10, marginLeft: 600, width:90 }}>
+        <Text style={{ alignSelf: 'center', color: 'white', fontWeight: 'bold' }}>댓글 추가</Text>
       </TouchableOpacity>
 
     </View>

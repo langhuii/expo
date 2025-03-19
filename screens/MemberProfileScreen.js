@@ -39,7 +39,7 @@ export default function MemberProfileScreen() {
         <View style={styles.profileContainer}>
           <TouchableOpacity style={styles.profileImageContainer} onPress={pickImage}>
             <Image 
-              source={profileImage ? profileImage : require("../assets/jieun.jpeg")} 
+              source={profileImage ? profileImage : require("../assets/profile.jpg")} 
               style={styles.profileImage} 
             />
             <View style={styles.addIcon}>

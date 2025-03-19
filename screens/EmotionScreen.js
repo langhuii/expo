@@ -90,7 +90,7 @@ export default function EmotionScreen({ navigation }) {
         onPress={() => navigation.navigate("NextScreen", { userEmotion: emotion })}
         disabled={emotion.trim() === ""}
       >
-        <Text style={styles.nextButtonText}>     다음</Text>
+        <Text style={styles.nextButtonText}> 다음</Text>
         <Ionicons name="chevron-forward-outline" size={20} color="black" style={styles.arrowIcon} />
       </TouchableOpacity>
     </View>
