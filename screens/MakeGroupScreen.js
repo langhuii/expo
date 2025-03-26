@@ -1,15 +1,54 @@
 import React, { useState } from "react";
 import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert 
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal 
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
+// ✅ 플로팅 메뉴 (주제 선택)
+const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
+  const categories = [
+    { title: "스포츠/레저", items: ["러닝/걷기", "등산/산악", "골프", "야구", "농구", "요가/필라테스", "당구", "수영/다이빙", "피트니스"] },
+    { title: "음악", items: ["노래", "악기", "음악"] },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <TouchableOpacity style={styles.modalOverlay} onPress={() => setVisible(false)} />
+      <View style={styles.menuContainer}>
+        {categories.map((category, index) => (
+          <View key={index} style={styles.categoryBox}>
+            <Text style={styles.categoryTitle}>{category.title}</Text>
+            <View style={styles.divider} />
+            <View style={styles.tagContainer}>
+              {category.items.map((item, i) => (
+                <TouchableOpacity 
+                  key={i} 
+                  style={styles.tagButton}
+                  onPress={() => {
+                    setSelectedCategory(item);
+                    setVisible(false);
+                  }}
+                >
+                  <Text style={styles.tagText}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+    </Modal>
+  );
+};
+
 export default function MakeGroupScreen({ navigation }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState([]); // 태그 리스트
+  const [tagInput, setTagInput] = useState(""); // 태그 입력값
   const [groupImage, setGroupImage] = useState(null);
+  const [menuVisible, setMenuVisible] = useState(false); // 플로팅 메뉴 상태
+  const [selectedCategory, setSelectedCategory] = useState("주제 선택"); // 선택된 카테고리
 
   // ✅ 갤러리에서 사진 선택
   const pickImage = async () => {
@@ -27,30 +66,36 @@ export default function MakeGroupScreen({ navigation }) {
 
   // ✅ 태그 추가 (최대 3개)
   const addTag = () => {
-    if (tags.length < 3) {
-      setTags([...tags, `태그${tags.length + 1}`]);
-    } else {
+    if (tagInput.trim() === "") return; // 빈 입력 방지
+    if (tags.length >= 3) {
       Alert.alert("알림", "최대 3개의 태그만 등록할 수 있습니다.");
+      return;
     }
+
+    setTags([...tags, `#${tagInput.trim()}`]); // 태그 추가
+    setTagInput(""); // 입력 필드 초기화
   };
 
-  // ✅ 그룹 생성 완료 버튼 클릭 (그룹 생성 후 `GroupListScreen`으로 전달)
+  // ✅ 태그 삭제 기능
+  const removeTag = (index) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
+
+  // ✅ 그룹 생성 완료 버튼 클릭
   const handleCreateGroup = () => {
     if (title.trim() === "" || description.length < 30) {
       Alert.alert("오류", "제목을 입력하고 설명을 30자 이상 작성해주세요.");
       return;
     }
 
-    // 새로운 그룹 객체 생성
     const newGroup = {
-      id: Date.now().toString(), // 고유 ID 생성
+      id: Date.now().toString(),
       name: title,
-      tags: tags.length > 0 ? tags : ["#새로운모임"], // 기본 태그
-      days: 0, // 새 그룹이므로 0일째
+      tags: tags.length > 0 ? tags : ["#새로운모임"],
+      days: 0,
       image: groupImage ? { uri: groupImage } : require("../assets/tokki.jpg"),
     };
 
-    // ✅ `navigation.navigate`를 사용하여 `GroupListScreen`으로 이동하면서 새로운 그룹 추가
     navigation.navigate("GroupListScreen", { newGroup });
   };
 
@@ -90,32 +135,46 @@ export default function MakeGroupScreen({ navigation }) {
       {/* 설명 입력 */}
       <TextInput
         style={styles.inputDescription}
-        placeholder="함께하고 싶은 모임 활동을 자세히 소개해주세요.\n(30자 이상)"
+        placeholder="함께하고 싶은 모임 활동을 자세히 소개해주세요 (30자 이상)"
         placeholderTextColor="#BDBDBD"
         multiline
         value={description}
         onChangeText={setDescription}
       />
 
-      {/* 주제 선택 */}
-      <Text style={styles.sectionTitle}>어떤 주제로 모임을 하고 싶나요?</Text>
-      <TouchableOpacity style={styles.subjectButton}>
-        <Text style={styles.subjectButtonText}>주제 선택</Text>
+      {/* 📌 플로팅 메뉴 버튼 */}
+      <TouchableOpacity style={styles.subjectButton} onPress={() => setMenuVisible(true)}>
+        <Text style={styles.subjectButtonText}>{selectedCategory}</Text>
       </TouchableOpacity>
 
-      {/* 태그 추가 */}
-      <Text style={styles.sectionTitle}>모임을 표현할 태그를 등록해 주세요.</Text>
+      {/* 📌 플로팅 메뉴 컴포넌트 */}
+      <FloatingMenu visible={menuVisible} setVisible={setMenuVisible} setSelectedCategory={setSelectedCategory} />
+
+      {/* 🔹 태그 입력 필드 */}
+      <Text style={styles.sectionTitle}>태그 입력</Text>
+      <View style={styles.tagInputContainer}>
+        <TextInput
+          style={styles.tagInput}
+          placeholder="태그 입력 후 Enter"
+          value={tagInput}
+          onChangeText={setTagInput}
+          onSubmitEditing={addTag} // Enter 키 입력 시 태그 추가
+        />
+        <TouchableOpacity onPress={addTag} style={styles.addTagButton}>
+          <Ionicons name="add-circle-outline" size={24} color="gray" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 🔹 태그 리스트 */}
       <View style={styles.tagContainer}>
         {tags.map((tag, index) => (
           <View key={index} style={styles.tag}>
             <Text style={styles.tagText}>{tag}</Text>
+            <TouchableOpacity onPress={() => removeTag(index)}>
+              <Ionicons name="close-circle" size={16} color="red" />
+            </TouchableOpacity>
           </View>
         ))}
-        {tags.length < 3 && (
-          <TouchableOpacity onPress={addTag}>
-            <Ionicons name="add-circle-outline" size={24} color="gray" />
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   );
@@ -139,11 +198,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
   },
   completeButton: {
     fontSize: 16,
-    color: "#333",
     fontWeight: "bold",
   },
   imageContainer: {
@@ -158,32 +215,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  groupImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
   inputTitle: {
     fontSize: 16,
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E0C49A",
     marginBottom: 15,
-  },
-  inputDescription: {
-    fontSize: 14,
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0C49A",
-    height: 80,
-    textAlignVertical: "top",
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
   },
   subjectButton: {
     backgroundColor: "#FCE29F",
@@ -195,25 +232,61 @@ const styles = StyleSheet.create({
   subjectButtonText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
   },
+
+  // 📌 플로팅 메뉴 스타일
+  menuContainer: {
+    position: "absolute",
+    bottom: 400, 
+    right: 20, // ✅ 메뉴 위치 조정
+    width: 280, // ✅ 가로 길이 조정
+    backgroundColor: "#FDE293",
+    borderRadius: 15,
+    padding: 15,
+  },
+  categoryBox: {
+    marginBottom: 15,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E5C07B",
+    marginVertical: 5,
+  },
+
+  // 📌 태그(주제) 스타일 (가로 3개씩 정렬)
   tagContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0C49A",
-    paddingBottom: 10,
+    flexDirection: "row", 
+    flexWrap: "wrap", // 여러 줄로 배치
+    alignItems: "center", 
+    gap: 5, // 태그 사이 여백 조정
   },
   tag: {
+    flexDirection: "row",
     backgroundColor: "#FCE29F",
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignItems: "center",
+    marginHorizontal: 4, // 좌우 간격 조정
+    marginBottom: 6, // 아래쪽 간격 추가
   },
   tagText: {
     fontSize: 14,
     color: "#333",
+    marginRight: 5,
+  },
+  tagButton: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 12,
+    marginVertical: 10,
+    width: "30%", // ✅ 가로 3개씩 배치
+    alignItems: "center",
   },
 });
+
