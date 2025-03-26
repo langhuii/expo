@@ -87,7 +87,7 @@ export default function EmotionScreen({ navigation }) {
       {/* ✅ 다음 버튼 (입력값 없을 시 비활성화) */}
       <TouchableOpacity 
         style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]} 
-        onPress={() => navigation.navigate("NextScreen", { userEmotion: emotion })}
+        onPress={() => navigation.navigate("RecommendationScreen", { userEmotion: emotion })}
         disabled={emotion.trim() === ""}
       >
         <Text style={styles.nextButtonText}> 다음</Text>

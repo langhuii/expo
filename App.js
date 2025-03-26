@@ -20,6 +20,7 @@ import MakeGroupScreen from "./screens/MakeGroupScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import RecommendationScreen from "./screens/RecommendationScreen";
 
 
 
@@ -117,7 +118,8 @@ export default function App() {
         <Stack.Screen name="WriteScreen" component={WriteScreen} />
         <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} />
         <Stack.Screen name="MakeGroup" component={MakeGroupScreen} options={{ title: "그룹 만들기" }} />
-        
+        <Stack.Screen name="RecommendationScreen" component={RecommendationScreen} />
+
         {/* ✅ "그룹 확인" 버튼 클릭 시 이동 */}
       </Stack.Navigator>
     </NavigationContainer>
