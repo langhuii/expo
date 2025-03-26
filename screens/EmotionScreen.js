@@ -57,14 +57,13 @@ export default function EmotionScreen({ navigation }) {
   }, []);
 
   return (
-    <View style={styles.container}>
-      {/* 상단 네비게이션 바 */}
+    <View style={styles.container}> 
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={20} color="black" />
         </TouchableOpacity>
         <Text style={styles.navTitle}>내 감정 분석</Text>
-        <View style={{ width: 30 }} /> {/* 빈 공간 */}
+        <View style={{ width: 30 }} /> 
       </View>
 
       {/* 배경 원 애니메이션 추가 */}

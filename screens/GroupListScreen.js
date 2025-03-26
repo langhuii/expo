@@ -48,16 +48,14 @@ const GroupListScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      {/* 🔹 네비게이션 바 */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.navTitle}>소속 그룹</Text>
-        <View style={{ width: 30 }} /> {/* 빈 공간 */}
+        <View style={{ width: 30 }} /> 
       </View>
 
-      {/* 🔹 그룹 리스트 */}
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
@@ -80,7 +78,6 @@ const GroupListScreen = ({ route }) => {
         )}
       />
 
-      {/* 🔹 그룹 만들기로 이동 (+ 버튼) */}
       <TouchableOpacity 
         style={styles.addButton} 
         onPress={() => navigation.navigate("MakeGroup")}

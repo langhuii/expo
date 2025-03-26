@@ -148,12 +148,9 @@ const handleCloseMenu = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FAE3B4' }}>
-      {/* 상단 헤더 */}
       <View style={{ backgroundColor: '#FFD59E', padding: 15, alignItems: 'center' }}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>SNS</Text>
       </View>
-
-      {/* 상단 스토리 영역 (최신 스토리만 표시) */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 10, height:78 }}>
         <TouchableOpacity onPress={handleAddStory} style={{ marginRight: 10}}>
           <Icon name="add-circle" size={50} color="#FFA500" />
@@ -165,17 +162,14 @@ const handleCloseMenu = () => {
         )}
       </ScrollView>
 
-      {/* 피드 목록 */}
       <FlatList
   data={posts}
   keyExtractor={item => item.id}
   renderItem={({ item }) => (
     <View style={{ margin: 20, padding: 15, backgroundColor: '#FFF8DC', minHeight: 300, borderRadius: 10 }}>
       
-      {/* 이미지 컨테이너 */}
       <View style={{ position: 'relative' }}>
         
-        {/* ✅ 프로필 박스 (클릭 가능하도록 수정) */}
         <TouchableOpacity
           onPress={() => handleProfilePress(item)}
           style={{ 
@@ -195,13 +189,10 @@ const handleCloseMenu = () => {
           </View>
         </TouchableOpacity>
 
-        {/* ✅ 게시글 이미지 */}
         <Image 
           source={item.image} 
           style={{ width: '100%', height: 1000, borderRadius: 10, marginTop: 10 }} 
         />
-
-        {/* ✅ 좋아요 & 댓글 버튼 (원본 유지) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
           <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
             <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
@@ -215,7 +206,6 @@ const handleCloseMenu = () => {
         </View>
       </View>
 
-      {/* ✅ 프로필 클릭 시 뜨는 메뉴 모달 */}
       <Modal visible={menuVisible} transparent={true} animationType="fade" onRequestClose={handleCloseMenu}>
         <TouchableOpacity style={styles.modalBackground} onPress={handleCloseMenu}>
           <View style={styles.menuContainer}>
@@ -236,34 +226,28 @@ const handleCloseMenu = () => {
 
     </View> // ✅ View 태그 닫는 위치 수정
   )}
-/> // ✅ FlatList 태그 올바르게 닫기
+/>
 
-      {/* 🔥 전체 화면 스토리 모달 */}
       <Modal visible={selectedStoryIndex !== null} transparent={true} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
           {selectedStoryIndex !== null && (
            <>
-              {/* 현재 스토리 이미지 */}
               <Image source={{ uri: stories[selectedStoryIndex] }} style={{ width: width, height: width * 9 / 16 }} resizeMode="contain" />
 
-              {/* 닫기 버튼 */}
               <TouchableOpacity onPress={handleCloseStoryModal} style={{ position: 'absolute', top: 40, right: 20 }}>
                 <Icon name="close" size={35} color="white" />
               </TouchableOpacity>
 
-              {/* 삭제 버튼 */}
               <TouchableOpacity onPress={handleDeleteStory} style={{ position: 'absolute', bottom: 100, right: 20 }}>
                 <Icon name="trash" size={35} color="red" />
               </TouchableOpacity>
 
-              {/* 이전 버튼 */}
               {selectedStoryIndex > 0 && (
                 <TouchableOpacity onPress={handlePrevStory} style={{ position: 'absolute', left: 20 }}>
                   <Icon name="chevron-back" size={40} color="white" />
                 </TouchableOpacity>
               )}
 
-              {/* 다음 버튼 */}
               {selectedStoryIndex < stories.length - 1 && (
                 <TouchableOpacity onPress={handleNextStory} style={{ position: 'absolute', right: 20 }}>
                   <Icon name="chevron-forward" size={40} color="white" />
@@ -296,12 +280,11 @@ const handleCloseMenu = () => {
   <Icon name="add" size={30} color="white" />
 </TouchableOpacity>
 
-{/* 🔥 댓글 모달 */}
 <Modal visible={selectedPostId !== null} transparent={true} animationType="slide">
   <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
     <View style={{backgroundColor: 'white', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.5 }}>
     <View style={{ maxHeight: height * 0.4, marginTop: 10 }}>
-  {/* 닫기 버튼 */}
+
   <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -26, right: -10, zIndex: 2}}
        >
        <Icon name="close" size={20} color="black" />
@@ -319,10 +302,10 @@ const handleCloseMenu = () => {
         borderBottomWidth: 1, 
         borderBottomColor: '#eee' 
       }}>
-        {/* 댓글 내용 */}
+
         <Text>{item}</Text>
 
-        {/* 삭제 버튼 */}
+
         <TouchableOpacity onPress={() => handleDeleteComment(index)}>
           <Icon name="trash" size={20} color="red" />
         </TouchableOpacity>
@@ -330,7 +313,7 @@ const handleCloseMenu = () => {
     )}
   />
 </View>
-      {/* 댓글 입력 필드 */}
+
       <TextInput
         value={commentText}
         onChangeText={setCommentText}
@@ -338,7 +321,6 @@ const handleCloseMenu = () => {
         style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 10, marginBottom: 10 }}
       />
 
-      {/* 댓글 추가 버튼 */}
       <TouchableOpacity onPress={handleAddComment} style={{ alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: 7, borderRadius: 10, marginLeft: 600, width:90 }}>
         <Text style={{ alignSelf: 'center', color: 'white', fontWeight: 'bold' }}>댓글 추가</Text>
       </TouchableOpacity>
