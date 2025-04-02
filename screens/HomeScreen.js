@@ -57,6 +57,7 @@ useEffect(() => {
       <ProgressBar color="#F8AFA6" progress={emotionStats.sadness} />
       <ProgressBar color="#F9E79F" progress={emotionStats.anger} />
       <ProgressBar color="#A9DFBF" progress={emotionStats.calm} />
+      <ProgressBar color="#E8B8F1" progress={emotionStats.anxiety} />
     </>
   ) : (
     <Text>감정 데이터를 불러오는 중...</Text>
