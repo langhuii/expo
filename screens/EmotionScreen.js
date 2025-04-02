@@ -2,10 +2,32 @@ import React, { useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from "react-native-reanimated";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 export default function EmotionScreen({ navigation }) {
-  const [emotion, setEmotion] = React.useState(""); // 감정 입력 상태
+  const [emotion, setEmotion] = React.useState("");
+  const [userId, setUserId] = React.useState(null); // 유저 ID 상태 추가
 
+  const sendEmotionToServer = async () => {
+    try {
+      const response = await fetch("http://192.168.0.100:8080/emotion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"  //보내는 형식 표기
+        },
+        body: JSON.stringify({
+          userId: userId, 
+          text: emotion
+        })
+      });
+  
+      const result = await response.json();
+      console.log("서버 응답:", result);
+    } catch (error) {
+      console.error("감정 전송 오류:", error);
+    }
+  };
   // 🔹 원의 애니메이션 값 (x축 이동)
   const circle1X = useSharedValue(0);
   const circle2X = useSharedValue(0);
@@ -86,8 +108,11 @@ export default function EmotionScreen({ navigation }) {
       {/* ✅ 다음 버튼 (입력값 없을 시 비활성화) */}
       <TouchableOpacity 
         style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]} 
-        onPress={() => navigation.navigate("RecommendationScreen", { userEmotion: emotion })}
-        disabled={emotion.trim() === ""}
+        
+          onPress={async () => {
+          await sendEmotionToServer();
+          navigation.navigate("RecommendationScreen", { userEmotion: emotion });
+        }}
       >
         <Text style={styles.nextButtonText}> 다음</Text>
         <Ionicons name="chevron-forward-outline" size={20} color="black" style={styles.arrowIcon} />
