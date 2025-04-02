@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function HomeScreen({ navigation }) {
   const [profileImage, setProfileImage] = useState(null);  //프로필 사진 받아오기.
   const [emotionStats, setEmotionStats] = useState(null); // ✅ 감정 통계 상태 추가
-  const [userName, setUserName] = useState("사용자"); // ✅ 이름 상태 추가
+  const [Username, setUserName] = useState("사용자"); // ✅ 이름 상태 추가
 
 useEffect(() => {
   const loadUserData = async () => {
@@ -40,7 +40,7 @@ useEffect(() => {
           style={styles.profileImage} 
         />
         <Text style={styles.welcomeText}>
-          <Text style={styles.italicText}>{userName}</Text> 님 반가워요 !
+          <Text style={styles.italicText}>{Username}</Text> 님 반가워요 !
         </Text>
         <TouchableOpacity style={styles.analysisButton} onPress={() => navigation.navigate("Emotion")}>
           <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
