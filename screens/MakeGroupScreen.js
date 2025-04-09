@@ -1,29 +1,51 @@
 import React, { useState } from "react";
 import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal 
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView  
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { createGroup } from "../api/groupAPI";
+
 
 // ✅ 플로팅 메뉴 (주제 선택)
 const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
   const categories = [
-    { title: "스포츠/레저", items: ["러닝/걷기", "등산/산악", "골프", "야구", "농구", "요가/필라테스", "당구", "수영/다이빙", "피트니스"] },
-    { title: "음악", items: ["노래", "악기", "음악"] },
+    { title: "도서", items: ["문학/소설", "인문/사회", "시/에세이","자기계발","과학/기술","경제/경영","만화/노벨"] },
+    { title: "운동", items: ["유산소 운동", "근력 운동", "스트레칭/균형 운동", "스포츠/레저 활동"] },
+    { title: "영화", items: ["🎬_코미디", "🎬_액션", "🎬_스릴러/범죄","🎬_공포","🎬_로맨스/멜로","🎬_SF","🎬_판타지/모험","🎬_가족/애니메이션"] },
+    { title: "드라마", items: ["📺_로맨스","📺_스릴러","📺_코미디","📺_판타지","📺_역사","📺_미스터리","📺_액션","📺_범죄"] },
+    { title: "음악", items: ["발라드", "힙합", "팝","락","재즈","클래식","트로트","인디","EDM","케이팝"] },
   ];
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <TouchableOpacity style={styles.modalOverlay} onPress={() => setVisible(false)} />
-      <View style={styles.menuContainer}>
+  <View style={styles.modalscreen}>
+    {/* 바깥 누르면 닫기 */}
+    <TouchableOpacity
+      style={styles.modalOverlay}
+      activeOpacity={1}
+      onPress={() => setVisible(false)}
+    />
+
+    <View style={styles.menuContainer}>
+      {/* ❌ 닫기 버튼 */}
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => setVisible(false)}
+      >
+        <Ionicons name="close" size={24} color="black" />
+      </TouchableOpacity>
+
+      {/* <ScrollView>로 플로팅 메뉴 항목 스크롤 가능하게 */}
+      <ScrollView style={styles.scrollContainer}>
         {categories.map((category, index) => (
           <View key={index} style={styles.categoryBox}>
             <Text style={styles.categoryTitle}>{category.title}</Text>
             <View style={styles.divider} />
             <View style={styles.tagContainer}>
               {category.items.map((item, i) => (
-                <TouchableOpacity 
-                  key={i} 
+                <TouchableOpacity
+                  key={i}
                   style={styles.tagButton}
                   onPress={() => {
                     setSelectedCategory(item);
@@ -36,8 +58,10 @@ const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
             </View>
           </View>
         ))}
-      </View>
-    </Modal>
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
   );
 };
 
@@ -82,22 +106,29 @@ export default function MakeGroupScreen({ navigation }) {
   };
 
   // ✅ 그룹 생성 완료 버튼 클릭
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (title.trim() === "" || description.length < 30) {
       Alert.alert("오류", "제목을 입력하고 설명을 30자 이상 작성해주세요.");
       return;
     }
-
-    const newGroup = {
-      id: Date.now().toString(),
-      name: title,
+  
+    const groupData = {
+      title,
+      description,
+      category: selectedCategory === "주제 선택" ? "" : selectedCategory,
       tags: tags.length > 0 ? tags : ["#새로운모임"],
-      days: 0,
-      image: groupImage ? { uri: groupImage } : require("../assets/tokki.jpg"),
+      imageUri: groupImage,
     };
-
-    navigation.navigate("GroupListScreen", { newGroup });
-  };
+  
+    const createdGroup = await createGroup(groupData);
+  
+    if (createdGroup) {
+      Alert.alert("성공", "그룹이 생성되었습니다!");
+      navigation.navigate("GroupListScreen", { newGroup: createdGroup });
+    } else {
+      Alert.alert("실패", "그룹 생성에 실패했습니다.");
+    }
+  };  
 
   return (
     <View style={styles.container}>
@@ -160,9 +191,6 @@ export default function MakeGroupScreen({ navigation }) {
           onChangeText={setTagInput}
           onSubmitEditing={addTag} // Enter 키 입력 시 태그 추가
         />
-        <TouchableOpacity onPress={addTag} style={styles.addTagButton}>
-          <Ionicons name="add-circle-outline" size={24} color="gray" />
-        </TouchableOpacity>
       </View>
 
       {/* 🔹 태그 리스트 */}
@@ -179,6 +207,7 @@ export default function MakeGroupScreen({ navigation }) {
     </View>
   );
 }
+
 
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
@@ -237,56 +266,98 @@ const styles = StyleSheet.create({
   // 📌 플로팅 메뉴 스타일
   menuContainer: {
     position: "absolute",
-    bottom: 400, 
-    right: 20, // ✅ 메뉴 위치 조정
-    width: 280, // ✅ 가로 길이 조정
-    backgroundColor: "#FDE293",
-    borderRadius: 15,
+    top: "40%",         // 부모 기준 세로 중앙
+    left: "50%",        // 부모 기준 가로 중앙
+    transform: [
+      { translateX: -150 }, // 너비의 절반만큼 왼쪽으로
+      { translateY: -100 }, // 높이의 절반만큼 위로
+    ],
+    width: 300,
+    backgroundColor: "#FFF7D4",
+    opacity: 0.95, 
+    borderRadius: 20,
     padding: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
   },
+  
   categoryBox: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
+  
   categoryTitle: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
   },
+  
   divider: {
     height: 1,
-    backgroundColor: "#E5C07B",
-    marginVertical: 5,
+    backgroundColor: "#FFD966",
+    marginBottom: 10,
   },
-
-  // 📌 태그(주제) 스타일 (가로 3개씩 정렬)
+  
   tagContainer: {
-    flexDirection: "row", 
-    flexWrap: "wrap", // 여러 줄로 배치
-    alignItems: "center", 
-    gap: 5, // 태그 사이 여백 조정
-  },
-  tag: {
     flexDirection: "row",
-    backgroundColor: "#FCE29F",
+    flexWrap: "wrap",
+    columnGap: 8,
+    rowGap: 10,
+    justifyContent: "flex-start",
+  },
+  
+  tagButton: {
+    backgroundColor: "#FFE599", // 노란 파스텔 톤
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    alignItems: "center",
-    marginHorizontal: 4, // 좌우 간격 조정
-    marginBottom: 6, // 아래쪽 간격 추가
+    borderWidth: 1,
+    borderColor: "#FFD966",
   },
+  
   tagText: {
     fontSize: 14,
-    color: "#333",
-    marginRight: 5,
+    color: "#444",
+    fontWeight: "500",
   },
-  tagButton: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 12,
-    marginVertical: 10,
-    width: "30%", // ✅ 가로 3개씩 배치
-    alignItems: "center",
-  },
+  modalscreen: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.3)", // 💡 전체 반투명 처리
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+modalOverlay: {
+  ...StyleSheet.absoluteFillObject, // 전체 덮기
+  zIndex: 1,
+},
+menuContainer: {
+  width: 300,
+  backgroundColor: "#FFF",
+  borderRadius: 15,
+  padding: 20,
+  zIndex: 2, // 메뉴가 overlay보다 위
+},
+closeButton: {
+  position: "absolute",
+  top: 10,
+  right: 10,
+  padding: 5,
+  zIndex: 3,
+},
+inputDescription: {
+  height: 120,            
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 10,
+  padding: 15,
+  fontSize: 14,
+  textAlignVertical: "top", 
+  marginBottom: 20,
+  backgroundColor: "#FFF",  
+},
 });
 

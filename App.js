@@ -108,7 +108,6 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* ✅ MainTabs는 함수 호출(X) → 함수 참조(O)로 전달해야 함 */} 
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
@@ -119,14 +118,10 @@ export default function App() {
         <Stack.Screen name="GroupListScreen" component={GroupListScreen} options={{ title: "그룹 목록" }} />
         <Stack.Screen name="MakeGroup" component={MakeGroupScreen} options={{ title: "그룹 만들기" }} />
         <Stack.Screen name="RecommendationScreen" component={RecommendationScreen} />
-
-        {/* ✅ "그룹 확인" 버튼 클릭 시 이동 */}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   splashContainer: {

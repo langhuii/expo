@@ -1,94 +1,71 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from "react-native-reanimated";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import axios from "axios";
 
 export default function EmotionScreen({ navigation }) {
-  const [emotion, setEmotion] = React.useState("");
-  const [userId, setUserId] = React.useState(null); // 유저 ID 상태 추가
+  const [emotion, setEmotion] = useState("");
+  const [userId, setUserId] = useState(null);
 
+  // 🔹 AsyncStorage에서 userId 불러오기
+  useEffect(() => {
+    const loadUserId = async () => {
+      const storedId = await AsyncStorage.getItem("userId");
+      setUserId(storedId);
+    };
+    loadUserId();
+  }, []);
+
+  // 🔹 감정 전송 함수
   const sendEmotionToServer = async () => {
     try {
-      const response = await fetch("http://192.168.0.100:8080/emotion", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"  //보내는 형식 표기
-        },
-        body: JSON.stringify({
-          userId: userId, 
-          text: emotion
-        })
+      const res = await axios.post("http://192.168.0.100:8080/emotion", {
+        userId,
+        text: emotion,
+      }, {
+        timeout: 3000, // ⏱ 타임아웃 3초 설정
       });
-  
-      const result = await response.json();
-      console.log("서버 응답:", result);
+
+      console.log("서버 응답:", res.data);
+      return res.data;
     } catch (error) {
-      console.error("감정 전송 오류:", error);
+      console.warn("⚠️ 서버에 감정 전송 실패:", error.message);
+      return null;
     }
   };
-  // 🔹 원의 애니메이션 값 (x축 이동)
+
+  // 🔹 애니메이션 설정
   const circle1X = useSharedValue(0);
   const circle2X = useSharedValue(0);
   const circle3X = useSharedValue(0);
   const circle4X = useSharedValue(0);
 
-  // 🔹 원의 애니메이션 스타일
-  const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle1X.value }],
-  }));
+  const animatedStyle1 = useAnimatedStyle(() => ({ transform: [{ translateX: circle1X.value }] }));
+  const animatedStyle2 = useAnimatedStyle(() => ({ transform: [{ translateX: circle2X.value }] }));
+  const animatedStyle3 = useAnimatedStyle(() => ({ transform: [{ translateX: circle3X.value }] }));
+  const animatedStyle4 = useAnimatedStyle(() => ({ transform: [{ translateX: circle4X.value }] }));
 
-  const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle2X.value }],
-  }));
-
-  const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle3X.value }],
-  }));
-
-  const animatedStyle4 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle4X.value }],
-  }));
-
-  // 🔹 애니메이션 실행
   useEffect(() => {
-    circle1X.value = withRepeat(
-      withTiming(50, { duration: 2000, easing: Easing.inOut(Easing.ease) }), // 좌우로 이동
-      -1,
-      true
-    );
-
-    circle2X.value = withRepeat(
-      withTiming(-50, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-
-    circle3X.value = withRepeat(
-      withTiming(30, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-
-    circle4X.value = withRepeat(
-      withTiming(-40, { duration: 3500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
+    circle1X.value = withRepeat(withTiming(50, { duration: 2000, easing: Easing.inOut(Easing.ease) }), -1, true);
+    circle2X.value = withRepeat(withTiming(-50, { duration: 2500, easing: Easing.inOut(Easing.ease) }), -1, true);
+    circle3X.value = withRepeat(withTiming(30, { duration: 3000, easing: Easing.inOut(Easing.ease) }), -1, true);
+    circle4X.value = withRepeat(withTiming(-40, { duration: 3500, easing: Easing.inOut(Easing.ease) }), -1, true);
   }, []);
 
   return (
-    <View style={styles.container}> 
+    <View style={styles.container}>
+      {/* 🔙 상단 네비게이션 */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={20} color="black" />
         </TouchableOpacity>
         <Text style={styles.navTitle}>내 감정 분석</Text>
-        <View style={{ width: 30 }} /> 
+        <View style={{ width: 30 }} />
       </View>
 
-      {/* 배경 원 애니메이션 추가 */}
+      {/* 🌈 배경 원 */}
       <View style={styles.background}>
         <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 140, left: 30 }]} />
         <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 170, right: -70 }]} />
@@ -96,31 +73,30 @@ export default function EmotionScreen({ navigation }) {
         <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 200, right: -30 }]} />
       </View>
 
-      {/* 감정 입력 박스 */}
+      {/* ✏️ 감정 입력 */}
       <TextInput
         style={styles.input}
         placeholder="오늘 당신의 기분을 입력해주세요."
         placeholderTextColor="#aaa"
         value={emotion}
-        onChangeText={(text) => setEmotion(text)}
+        onChangeText={setEmotion}
       />
 
-      {/* ✅ 다음 버튼 (입력값 없을 시 비활성화) */}
-      <TouchableOpacity 
-        style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]} 
-        
-          onPress={async () => {
-          await sendEmotionToServer();
+      {/* ✅ 다음 버튼 */}
+      <TouchableOpacity
+        style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]}
+        disabled={emotion.trim() === ""}
+        onPress={async () => {
+          await sendEmotionToServer(); // 성공/실패 관계없이 진행
           navigation.navigate("RecommendationScreen", { userEmotion: emotion });
         }}
       >
-        <Text style={styles.nextButtonText}> 다음</Text>
-        <Ionicons name="chevron-forward-outline" size={20} color="black" style={styles.arrowIcon} />
+        <Text style={styles.nextButtonText}>다음</Text>
+        <Ionicons name="chevron-forward-outline" size={20} color="black" />
       </TouchableOpacity>
     </View>
   );
 }
-
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {

@@ -7,7 +7,7 @@ export const globalStyles = StyleSheet.create({
   },
   textBold: {
     fontFamily: "BagelFatOne-Regular",
-    fontSize: 20,
+    fontSize: 16,
     //fontWeight: "bold",
   },
   textItalic: {
