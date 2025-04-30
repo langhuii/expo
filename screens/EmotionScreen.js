@@ -28,6 +28,8 @@ export default function EmotionScreen({ navigation }) {
         timeout: 3000, // ⏱ 타임아웃 3초 설정
       });
 
+      return res.data;
+
       console.log("서버 응답:", res.data);
       return res.data;
     } catch (error) {
@@ -87,8 +89,8 @@ export default function EmotionScreen({ navigation }) {
         style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]}
         disabled={emotion.trim() === ""}
         onPress={async () => {
-          await sendEmotionToServer(); // 성공/실패 관계없이 진행
-          navigation.navigate("RecommendationScreen", { userEmotion: emotion });
+          await sendEmotionToServer(); 
+          navigation.navigate("RecommendationScreen", { userEmotion: result.emotion});
         }}
       >
         <Text style={styles.nextButtonText}>다음</Text>
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 15,
+    paddingVertical: 35,
     paddingHorizontal: 10,
     backgroundColor: "#FCE8A8",
     borderTopLeftRadius: 20,

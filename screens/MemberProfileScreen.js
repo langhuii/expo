@@ -82,7 +82,7 @@ export default function MemberProfileScreen() {
   // 🔹 렌더링
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={[styles.scrollContainer, { flexGrow: 1 }]}>
 
         {/* 📸 프로필 이미지 */}
         <View style={styles.profileContainer}>
@@ -106,11 +106,6 @@ export default function MemberProfileScreen() {
           />
           <Ionicons name="pencil-outline" size={20} color="black" />
         </View>
-
-        {/* 💾 저장 버튼 */}
-        <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>저장하기</Text>
-        </TouchableOpacity>
 
         {/* 📦 카드 목록 */}
         <View style={styles.cardContainer}>
@@ -169,6 +164,7 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: "center",
+    marginTop: 40, // ✅ 추가
   },
   profileImageContainer: {
     position: "relative",
@@ -179,11 +175,11 @@ const styles = StyleSheet.create({
     borderRadius: 65,
     borderWidth: 2,
     borderColor: "gray",
-    top: 100,
+    marginTop: 20, // ✅ 수정: top 제거
   },
   addIcon: {
     position: "absolute",
-    bottom: -100,
+    bottom: 0,
     right: -8,
     backgroundColor: "#00000080",
     borderRadius: 15,
@@ -198,26 +194,35 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     width: "80%",
-    marginTop: 20,
-    top: 100,
+    marginTop: 20, // ✅ top → marginTop
   },
   nameInput: {
     fontSize: 18,
     flex: 1,
     textAlign: "center",
   },
+  saveButton: {
+    backgroundColor: "#FAD648",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    marginTop: 20,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
   cardContainer: {
     width: "90%",
-    marginTop: 30,
-    top: 100,
+    marginTop: 30, // ✅ top 제거
   },
   card: {
     backgroundColor: "#FCE8A8",
     padding: 15,
     borderRadius: 15,
     marginBottom: 15,
-    top: 30,
-    justifyContent: "center", // 세로 중앙
+    justifyContent: "center",
   },
   cardText: {
     fontSize: 16,
@@ -226,6 +231,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "right",
     marginTop: 5,
-    lineHeight: 20,  //  줄 높이, 글자 밀림짤림 방지
+    lineHeight: 20,
   },
-}); 
+});

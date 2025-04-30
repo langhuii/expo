@@ -190,9 +190,11 @@ const handleCloseMenu = () => {
         </TouchableOpacity>
 
         <Image 
-          source={item.image} 
+  source={item.image} 
           style={{ width: '100%', height: 1000, borderRadius: 10, marginTop: 10 }} 
-        />
+/>
+
+
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
           <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
             <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />

@@ -15,25 +15,25 @@ export default function RecommendationScreen({ route }) {
   // ✅ 기본 콘텐츠 맵
   const contentMap = {
     슬픔: [
-      { type: "영화", title: "청설" },
-      { type: "음악", title: "HAPPY - DAY6" },
-      { type: "도서", title: "내게 무해한 사람 - 최은영" },
-      { type: "드라마", title: "응답하라 1988" },
+      { type: "영화", title: "청설", description: "감정이 얽힌 청춘의 이야기" },
+      { type: "음악", title: "HAPPY - DAY6", description: "슬픔을 위로하는 밝은 멜로디" },
+      { type: "도서", title: "내게 무해한 사람 - 최은영", description: "상처받은 이들을 위한 이야기" },
+      { type: "드라마", title: "응답하라 1988", description: "그 시절 우리의 따뜻한 추억" },
     ],
     기쁨: [
-      { type: "영화", title: "인사이드 아웃" },
-      { type: "음악", title: "좋은 날 - 아이유" },
-      { type: "도서", title: "아몬드 - 손원평" },
-      { type: "드라마", title: "미스터 션샤인" },
+      { type: "영화", title: "인사이드 아웃", description: "감정을 이해하는 여행" },
+      { type: "음악", title: "좋은 날 - 아이유", description: "기분 좋은 날씨 같은 노래" },
+      { type: "도서", title: "아몬드 - 손원평", description: "감정을 느끼지 못하는 소년의 이야기" },
+      { type: "드라마", title: "미스터 션샤인", description: "시대를 거스른 사랑과 정의" },
     ],
     default: [
-      { type: "영화", title: "위플래쉬" },
-      { type: "음악", title: "MANIAC - StrayKids" },
-      { type: "도서", title: "인간실격" },
-      { type: "드라마", title: "킹덤" },
+      { type: "영화", title: "위플래쉬", description: "뉴욕 음악학교의 열정과 고통, 플레쳐 교수와 드러머 앤드류의 극한 경쟁 이야기" },
+      { type: "음악", title: "MANIAC - StrayKids", description: "폭발적 에너지를 담은 스트레이키즈 대표곡" },
+      { type: "도서", title: "인간실격", description: "순수했던 청년의 자아 붕괴와 사회적 파멸의 이야기" },
+      { type: "드라마", title: "킹덤", description: "조선시대 좀비 재난의 긴장감 넘치는 전개" },
     ],
   };
-
+  
   // ✅ 감정 키 추출 및 기본 추천
   const emotionKey = Object.keys(contentMap).find((key) =>
     userEmotion.includes(key)
@@ -83,25 +83,76 @@ export default function RecommendationScreen({ route }) {
 
   return (
     <View style={styles.container}>
+  
+      {/* 🎬 영화 */}
       <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 130, left: 20 }]}>
-        <Text style={styles.circleText}>🎬 영화{"\n"}{recommended[0]?.title}</Text>
+        {recommended[0]?.imageUrl && (
+          <Image source={{ uri: recommended[0].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+        )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            🎬 {recommended[0]?.type}{"\n"}{recommended[0]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[0]?.description}
+          </Text>
+        </View>
       </Animated.View>
+      
+  
+      {/* 🎧 음악 */}
       <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 150, right: -60 }]}>
-        <Text style={styles.circleText}>🎧 음악{"\n"}{recommended[1]?.title}</Text>
+        {recommended[1]?.imageUrl && (
+          <Image source={{ uri: recommended[1].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+        )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            🎧 {recommended[1]?.type}{"\n"}{recommended[1]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[1]?.description}
+          </Text>
+        </View>
       </Animated.View>
+  
+      {/* 📚 도서 */}
       <Animated.View style={[styles.circle, styles.circleBlue, animatedStyle3, { bottom: 80, left: -90 }]}>
-        <Text style={styles.circleText}>📚 도서{"\n"}{recommended[2]?.title}</Text>
+        {recommended[2]?.imageUrl && (
+          <Image source={{ uri: recommended[2].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+        )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            📚 {recommended[2]?.type}{"\n"}{recommended[2]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[2]?.description}
+          </Text>
+        </View>
       </Animated.View>
+  
+      {/* 📺 드라마 */}
       <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 180, right: -30 }]}>
-        <Text style={styles.circleText}>📺 드라마{"\n"}{recommended[3]?.title}</Text>
+        {recommended[3]?.imageUrl && (
+          <Image source={{ uri: recommended[3].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+        )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            📺 {recommended[3]?.type}{"\n"}{recommended[3]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[3]?.description}
+          </Text>
+        </View>
       </Animated.View>
-
+  
+      {/* 📝 설명 텍스트 */}
       <Text style={styles.header}>{Username}님의 감정을 분석하여 추천한 컨텐츠들이에요</Text>
       <Text style={styles.subtext}>
         당신의 감정: <Text style={styles.emotion}>{userEmotion}</Text>
       </Text>
     </View>
   );
+  
 }
 
 // 🔹 스타일
@@ -111,6 +162,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FDFBF5",
     paddingTop: 60,
     paddingHorizontal: 20,
+    paddingTop: 30,
   },
   header: {
     fontSize: 22,
@@ -171,11 +223,37 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 180,
   },
-  circleText: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#000000",
-    fontWeight: "bold",
+  circleImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 100,
+    position: "absolute", // 배경처럼
+    top: 0,
+    left: 0,
   },
+  
+  overlayContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    zIndex: 1, // 이미지 위에 오게
+    justifyContent: "flex-start", // 위쪽 정렬
+  },
+  
+  circleText: {
+    fontSize: 13,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  
+  circleSubText: {
+    color: "#000",
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 4,
+    backgroundColor: "rgba(255,255,255,0.5)", // 확인용 배경
+  },
+  
 });
 
