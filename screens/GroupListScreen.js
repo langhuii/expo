@@ -5,29 +5,40 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { fetchGroups } from "../api/groupAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ✅ 플로팅 메뉴 (그룹 카테고리와 설명을 포함)
 const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
-  if (!selectedGroup) {
-    return null; // selectedGroup이 없으면 아무 것도 렌더링하지 않음
-  }
+  if (!selectedGroup) return null;
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalscreen}>
-        {/* 바깥을 누르면 닫기 */}
+        {/* 바깥 클릭 시 닫힘 */}
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)} />
-
         <View style={styles.menuContainer}>
-          {/* ❌ 닫기 버튼 */}
+          {/* 닫기 버튼 */}
           <TouchableOpacity style={styles.closeButton} onPress={() => setVisible(false)}>
             <Ionicons name="close" size={24} color="black" />
           </TouchableOpacity>
 
           <ScrollView style={styles.scrollContainer}>
+            {/* 그룹 카테고리 */}
             <Text style={styles.categoryTitle}>그룹 카테고리</Text>
             <Text>{selectedGroup.category}</Text>
+
             <View style={styles.divider} />
+
+            {/* 그룹 설명 */}
             <Text style={styles.categoryTitle}>그룹 설명</Text>
             <Text>{selectedGroup.description}</Text>
+
+            <View style={styles.divider} />
+
+            {/* 그룹 태그 */}
+            <Text style={styles.categoryTitle}>그룹 태그</Text>
+            <View style={styles.tagContainer}>
+              {selectedGroup.tags.map((tag, index) => (
+                <Text key={index} style={styles.tagItem}>{tag}</Text>
+              ))}
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -301,6 +312,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
+  tagContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 4,
+  },
+  tagItem: {
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+    fontSize: 13,
+  },
+  
   
 });
 
