@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, TextInput, Modal, ScrollView } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, TextInput, Modal, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { fetchGroups } from "../api/groupAPI";
@@ -139,8 +139,8 @@ const GroupListScreen = ({ route }) => {
   };
 
   const handleOpenMenu = (group) => {
-    setSelectedGroup(group);
-    setMenuVisible(true);
+    setSelectedGroup(group); // 선택한 그룹의 정보를 상태로 저장
+    setMenuVisible(true); // 플로팅 메뉴 열기
   };
 
   return (
@@ -166,39 +166,30 @@ const GroupListScreen = ({ route }) => {
         data={filteredGroups}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.textContainer}>
-              <Text style={styles.groupName}>{item.name}</Text>
-              <Text style={styles.tags}>
-                그룹의 지향점은{"\n"}
-                {item.tags.map((tag, index) => (
-                  <Text key={index} style={styles.tagText}>{tag} </Text>
-                ))}
-              </Text>
-              <Text style={styles.daysText}>
-                이 그룹과 함께한지 <Text style={styles.bold}>{item.days}</Text> 일 째 입니다.
-              </Text>
+          <TouchableOpacity onPress={() => handleOpenMenu(item)}>
+            <View style={styles.card}>
+              <View style={styles.textContainer}>
+                <Text style={styles.groupName}>{item.name}</Text>
+                <Text style={styles.tags}>
+                  그룹의 지향점은{"\n"}
+                  {item.tags.map((tag, index) => (
+                    <Text key={index} style={styles.tagText}>{tag} </Text>
+                  ))}
+                </Text>
+                <TouchableOpacity
+            style={styles.joinButton}
+            onPress={() => handleJoinGroup(item)} // 가입하기 버튼 클릭 시 함수 호출
+          >
+            <Text style={styles.joinButtonText}>가입하기</Text>
+          </TouchableOpacity>
+              </View>
 
-              {/* 🔹 가입 버튼 추가 */}
-              <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoinGroup(item)}
-              >
-                <Text style={styles.joinButtonText}>가입하기</Text>
-              </TouchableOpacity>
+              <Image
+                source={item.image}
+                style={styles.groupImage}
+              />
             </View>
-
-            <Image
-              source={
-                item.image
-                  ? typeof item.image === "number"
-                    ? item.image
-                    : { uri: item.image }
-                  : require("../assets/tokki.jpg")
-              }
-              style={styles.groupImage}
-            />
-          </View>
+          </TouchableOpacity>
         )}
       />
 
@@ -216,7 +207,6 @@ const GroupListScreen = ({ route }) => {
   );
 };
 
-
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {
@@ -225,10 +215,60 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   modalscreen: {
-    lex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)", // 💡 전체 반투명 처리
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)", // 💡 전체 반투명 처리
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+  },
+  menuContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    maxHeight: "80%",
+    elevation: 5,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 1,
+  },
+  scrollContainer: {
+    paddingTop: 40, // 타이틀과 내용 간격
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+  },
+  menuContent: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 15,
+  },
+  tagContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  tagItem: {
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+    fontSize: 13,
+    color: "#555",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginVertical: 10,
   },
   searchInput: {
     backgroundColor: "#fff",
@@ -326,7 +366,27 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
   },
+  joinButton: {
+    marginTop: 15,             // 버튼과 텍스트 간의 여백 추가
+    backgroundColor: "#4CAF50", // 녹색 배경
+    paddingVertical: 12,        // 수직 여백 추가
+    paddingHorizontal: 25,      // 수평 여백 추가
+    borderRadius: 25,           // 둥근 모서리 적용
+    alignSelf: "flex-start",    // 왼쪽 정렬
+    marginBottom: 15,           // 버튼과 아래 항목 사이의 여백 추가
+    elevation: 3,               // 그림자 효과
+    shadowColor: '#000',        // 그림자 색상
+    shadowOffset: { width: 0, height: 2 },  // 그림자 오프셋
+    shadowOpacity: 0.2,         // 그림자 투명도
+    shadowRadius: 3,            // 그림자 반경
+  },
   
+  joinButtonText: {
+    color: "white",             // 흰색 텍스트
+    fontWeight: "bold",         // 굵은 텍스트
+    fontSize: 12,               // 텍스트 크기 조정
+    textAlign: "center",        // 텍스트 중앙 정렬
+  },
   
 });
 
