@@ -7,38 +7,46 @@ import axios from "axios";
 
 export default function EmotionScreen({ navigation }) {
   const [emotion, setEmotion] = useState("");
-  const [userId, setUserId] = useState(null);
 
-  // 🔹 AsyncStorage에서 userId 불러오기
-  useEffect(() => {
-    const loadUserId = async () => {
-      const storedId = await AsyncStorage.getItem("userId");
-      setUserId(storedId);
-    };
-    loadUserId();
-  }, []);
-
-  // 🔹 감정 전송 함수
   const sendEmotionToServer = async () => {
     try {
-      const res = await axios.post("http://192.168.0.100:8080/emotion", {
-        userId,
-        text: emotion,
-      }, {
-        timeout: 3000, // ⏱ 타임아웃 3초 설정
-      });
+      const token = await AsyncStorage.getItem("accessToken");
 
-      return res.data;
+      const analyzeRes = await axios.post(
+        "http://192.168.0.100:8080/api/emotion/analyze",
+        { text: emotion },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 3000,
+        }
+      );
 
-      console.log("서버 응답:", res.data);
-      return res.data;
+      const detectedEmotion = analyzeRes.data.emotion;
+
+      const recommendRes = await axios.post(
+        "http://192.168.0.100:8080/api/recommendations",
+        { emotion: detectedEmotion },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 3000,
+        }
+      );
+
+      return {
+        emotion: detectedEmotion,
+        content: recommendRes.data.recommendations,
+      };
+
     } catch (error) {
-      console.warn("⚠️ 서버에 감정 전송 실패:", error.message);
-      return null;
+      console.warn("⚠️ 감정 분석 또는 추천 실패:", error.message);
+      return {
+        emotion: "기본",
+        content: null,
+      };
+      
     }
   };
 
-  // 🔹 애니메이션 설정
   const circle1X = useSharedValue(0);
   const circle2X = useSharedValue(0);
   const circle3X = useSharedValue(0);
@@ -58,7 +66,6 @@ export default function EmotionScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🔙 상단 네비게이션 */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={20} color="black" />
@@ -67,7 +74,6 @@ export default function EmotionScreen({ navigation }) {
         <View style={{ width: 30 }} />
       </View>
 
-      {/* 🌈 배경 원 */}
       <View style={styles.background}>
         <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 140, left: 30 }]} />
         <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 170, right: -70 }]} />
@@ -75,7 +81,6 @@ export default function EmotionScreen({ navigation }) {
         <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 200, right: -30 }]} />
       </View>
 
-      {/* ✏️ 감정 입력 */}
       <TextInput
         style={styles.input}
         placeholder="오늘 당신의 기분을 입력해주세요."
@@ -84,13 +89,17 @@ export default function EmotionScreen({ navigation }) {
         onChangeText={setEmotion}
       />
 
-      {/* ✅ 다음 버튼 */}
       <TouchableOpacity
         style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]}
         disabled={emotion.trim() === ""}
         onPress={async () => {
-          await sendEmotionToServer(); 
-          navigation.navigate("RecommendationScreen", { userEmotion: result.emotion});
+          const result = await sendEmotionToServer();
+          if (result) {
+            navigation.navigate("RecommendationScreen", {
+              userEmotion: result.emotion,
+              contentList: result.content,
+            });
+          }
         }}
       >
         <Text style={styles.nextButtonText}>다음</Text>

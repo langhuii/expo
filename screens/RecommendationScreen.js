@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,12 +7,13 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { fetchRecommendations } from "../api/recommendAPI";
 
 export default function RecommendationScreen({ route }) {
-  const { userEmotion } = route.params;
-  const [Username, setUserName] = useState("사용자"); 
-  // ✅ 기본 콘텐츠 맵
+  const { userEmotion, contentList } = route.params;
+  const [recommended, setRecommended] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [Username, setUserName] = useState("사용자");
+
   const contentMap = {
     슬픔: [
       { type: "영화", title: "청설", description: "감정이 얽힌 청춘의 이야기" },
@@ -27,52 +28,32 @@ export default function RecommendationScreen({ route }) {
       { type: "드라마", title: "미스터 션샤인", description: "시대를 거스른 사랑과 정의" },
     ],
     default: [
-      { type: "영화", title: "위플래쉬", description: "뉴욕 음악학교의 열정과 고통, 플레쳐 교수와 드러머 앤드류의 극한 경쟁 이야기" },
-      { type: "음악", title: "MANIAC - StrayKids", description: "폭발적 에너지를 담은 스트레이키즈 대표곡" },
-      { type: "도서", title: "인간실격", description: "순수했던 청년의 자아 붕괴와 사회적 파멸의 이야기" },
-      { type: "드라마", title: "킹덤", description: "조선시대 좀비 재난의 긴장감 넘치는 전개" },
+      { type: "영화", title: "위플래쉬", description: "뉴욕 음악학교의 열정과 고통, 플레쳐 교수와 드러머 앤드류의 극한 경쟁 이야기",image: require("../assets/images/whiplash.png"), },
+      { type: "음악", title: "MANIAC - StrayKids", description: "폭발적 에너지를 담은 스트레이키즈 대표곡",image: require("../assets/images/maniac.png") },
+      { type: "도서", title: "인간실격", description: "순수했던 청년의 자아 붕괴와 사회적 파멸의 이야기" ,image: require("../assets/images/person.png")},
+      { type: "드라마", title: "킹덤", description: "조선시대 좀비 재난의 긴장감 넘치는 전개",image: require("../assets/images/kingdom.png")},
     ],
   };
-  
-  // ✅ 감정 키 추출 및 기본 추천
-  const emotionKey = Object.keys(contentMap).find((key) =>
-    userEmotion.includes(key)
-  );
-  const defaultRecommendation = contentMap[emotionKey] || contentMap.default;
 
-  // ✅ 상태에 기본 추천 세팅
-  const [recommended, setRecommended] = useState(defaultRecommendation);
-
-  // ✅ 서버에서 추천 데이터 받아오면 덮어쓰기
   useEffect(() => {
-    const loadRecommendations = async () => {
-      const data = await fetchRecommendations(userEmotion);
-      if (data && data.length === 4) {
-        setRecommended(data);
-      } // 아니면 기본값 유지
-    };
+    if (contentList && contentList.length === 4) {
+      setRecommended(contentList);
+    } else {
+      const key = Object.keys(contentMap).find((k) => userEmotion.includes(k));
+      setRecommended(contentMap[key] || contentMap.default);
+    }
+    setLoading(false);
+  }, []);
 
-    loadRecommendations();
-  }, [userEmotion]);
-
-  // ✅ 애니메이션 설정 (생략 없이 동일)
   const circle1X = useSharedValue(0);
   const circle2X = useSharedValue(0);
   const circle3X = useSharedValue(0);
   const circle4X = useSharedValue(0);
 
-  const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle1X.value }],
-  }));
-  const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle2X.value }],
-  }));
-  const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle3X.value }],
-  }));
-  const animatedStyle4 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle4X.value }],
-  }));
+  const animatedStyle1 = useAnimatedStyle(() => ({ transform: [{ translateX: circle1X.value }] }));
+  const animatedStyle2 = useAnimatedStyle(() => ({ transform: [{ translateX: circle2X.value }] }));
+  const animatedStyle3 = useAnimatedStyle(() => ({ transform: [{ translateX: circle3X.value }] }));
+  const animatedStyle4 = useAnimatedStyle(() => ({ transform: [{ translateX: circle4X.value }] }));
 
   useEffect(() => {
     circle1X.value = withRepeat(withTiming(40, { duration: 3000, easing: Easing.inOut(Easing.ease) }), -1, true);
@@ -81,14 +62,24 @@ export default function RecommendationScreen({ route }) {
     circle4X.value = withRepeat(withTiming(-30, { duration: 4500, easing: Easing.inOut(Easing.ease) }), -1, true);
   }, []);
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.subtext}>추천 콘텐츠를 불러오는 중입니다...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
   
       {/* 🎬 영화 */}
       <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 130, left: 20 }]}>
-        {recommended[0]?.imageUrl && (
-          <Image source={{ uri: recommended[0].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-        )}
+      {recommended[0]?.image && (
+    <Image source={recommended[0].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[0]?.imageUrl && (
+    <Image source={{ uri: recommended[0].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
             🎬 {recommended[0]?.type}{"\n"}{recommended[0]?.title}
@@ -102,9 +93,12 @@ export default function RecommendationScreen({ route }) {
   
       {/* 🎧 음악 */}
       <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 150, right: -60 }]}>
-        {recommended[1]?.imageUrl && (
-          <Image source={{ uri: recommended[1].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-        )}
+      {recommended[1]?.image && (
+    <Image source={recommended[1].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[1]?.imageUrl && (
+    <Image source={{ uri: recommended[1].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
             🎧 {recommended[1]?.type}{"\n"}{recommended[1]?.title}
@@ -117,9 +111,12 @@ export default function RecommendationScreen({ route }) {
   
       {/* 📚 도서 */}
       <Animated.View style={[styles.circle, styles.circleBlue, animatedStyle3, { bottom: 80, left: -90 }]}>
-        {recommended[2]?.imageUrl && (
-          <Image source={{ uri: recommended[2].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-        )}
+      {recommended[2]?.image && (
+    <Image source={recommended[2].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[2]?.imageUrl && (
+    <Image source={{ uri: recommended[2].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
             📚 {recommended[2]?.type}{"\n"}{recommended[2]?.title}
@@ -132,9 +129,12 @@ export default function RecommendationScreen({ route }) {
   
       {/* 📺 드라마 */}
       <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 180, right: -30 }]}>
-        {recommended[3]?.imageUrl && (
-          <Image source={{ uri: recommended[3].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-        )}
+      {recommended[3]?.image && (
+    <Image source={recommended[3].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[3]?.imageUrl && (
+    <Image source={{ uri: recommended[3].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
             📺 {recommended[3]?.type}{"\n"}{recommended[3]?.title}
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
   circleImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 100,
-    position: "absolute", // 배경처럼
+    borderRadius: 9999,
+    position: "absolute", 
     top: 0,
     left: 0,
   },
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "bold",
     textAlign: "center",
+    backgroundColor: "rgba(255,255,255,1)", // 확인용 배경
   },
   
   circleSubText: {
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
     marginTop: 4,
-    backgroundColor: "rgba(255,255,255,0.5)", // 확인용 배경
+    backgroundColor: "rgba(255,255,255,1)", // 확인용 배경
   },
   
 });

@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+} from "react-native";
 import { Calendar } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 
-
-export default function CalendarScreen() {
+export default function CalendarScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState("");
   const [comment, setComment] = useState("");
   const [markedDates, setMarkedDates] = useState({});
@@ -24,19 +30,20 @@ export default function CalendarScreen() {
   const saveCommentAndEmoji = () => {
     if (!selectedDate) return;
 
-    let updatedComments = { ...comments };
-    if (!updatedComments[selectedDate]) {
-      updatedComments[selectedDate] = [];
+    let updated = { ...comments };
+
+    if (!updated[selectedDate]) {
+      updated[selectedDate] = [];
     }
 
     if (editingIndex !== null) {
-      updatedComments[selectedDate][editingIndex] = comment;
+      updated[selectedDate][editingIndex] = comment;
       setEditingIndex(null);
     } else {
-      updatedComments[selectedDate].push(comment);
+      updated[selectedDate].push(comment);
     }
 
-    setComments(updatedComments);
+    setComments(updated);
     setComment("");
 
     setMarkedDates({
@@ -56,12 +63,10 @@ export default function CalendarScreen() {
   };
 
   const deleteComment = (index) => {
-    let updatedComments = { ...comments };
-    updatedComments[selectedDate].splice(index, 1);
-    if (updatedComments[selectedDate].length === 0) {
-      delete updatedComments[selectedDate];
-    }
-    setComments(updatedComments);
+    const updated = { ...comments };
+    updated[selectedDate].splice(index, 1);
+    if (updated[selectedDate].length === 0) delete updated[selectedDate];
+    setComments(updated);
   };
 
   const editComment = (index) => {
@@ -71,28 +76,45 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.calendarContainer}>
-        <Calendar
-  onDayPress={handleDayPress}
-  monthFormat={"yyyy MM"}
-  hideExtraDays={true}
-  markedDates={markedDates}
-  style={styles.calendar}
-  dayComponent={({ date, state }) => (
-    <TouchableOpacity 
-      onPress={() => handleDayPress({ dateString: date.dateString })} 
-      style={styles.dayContainer} // 💡 스타일 적용
-    >
-      <Text style={[styles.dayText, state === "disabled" && { color: "gray" }]}>{date.day}</Text>
-      {markedDates[date.dateString]?.emoji && (
-        <Text style={styles.emoji}>{markedDates[date.dateString].emoji}</Text>
-      )}
-    </TouchableOpacity>
-  )}
-/>
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>소속 그룹</Text>
+        <View style={{ width: 30 }} />
       </View>
 
-      {selectedDate ? (
+      <View style={styles.calendarContainer}>
+        <Calendar
+          onDayPress={handleDayPress}
+          monthFormat={"yyyy MM"}
+          hideExtraDays
+          markedDates={markedDates}
+          style={styles.calendar}
+          dayComponent={({ date, state }) => (
+            <TouchableOpacity
+              onPress={() => handleDayPress({ dateString: date.dateString })}
+              style={styles.dayContainer}
+            >
+              <Text
+                style={[
+                  styles.dayText,
+                  state === "disabled" && { color: "gray" },
+                ]}
+              >
+                {date.day}
+              </Text>
+              {markedDates[date.dateString]?.emoji && (
+                <Text style={styles.emoji}>
+                  {markedDates[date.dateString].emoji}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
+      {selectedDate && (
         <>
           <View style={styles.emojiContainer}>
             <Text style={styles.emojiText}>감정 선택:</Text>
@@ -103,16 +125,21 @@ export default function CalendarScreen() {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
-                    setSelectedEmoji(prevEmoji => prevEmoji === item ? "" : item);
+                    const emoji = selectedEmoji === item ? "" : item;
+                    setSelectedEmoji(emoji);
                     setMarkedDates({
                       ...markedDates,
                       [selectedDate]: {
                         ...markedDates[selectedDate],
-                        emoji: selectedEmoji === item ? "" : item,
+                        emoji: emoji,
                       },
                     });
                   }}
-                  style={[styles.emojiButton, markedDates[selectedDate]?.emoji === item && styles.selectedEmoji]}
+                  style={[
+                    styles.emojiButton,
+                    markedDates[selectedDate]?.emoji === item &&
+                      styles.selectedEmoji,
+                  ]}
                 >
                   <Text style={styles.emoji}>{item}</Text>
                 </TouchableOpacity>
@@ -127,12 +154,12 @@ export default function CalendarScreen() {
               value={comment}
               onChangeText={setComment}
             />
-            <TouchableOpacity style={styles.commentButton} onPress={saveCommentAndEmoji}>
+            <TouchableOpacity onPress={saveCommentAndEmoji}>
               <Ionicons name="checkmark" size={24} color="black" />
             </TouchableOpacity>
           </View>
         </>
-      ) : null}
+      )}
 
       <View style={styles.memoContainer}>
         <FlatList
@@ -156,128 +183,144 @@ export default function CalendarScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: {      //전체적인 
-    flex: 1, 
-    backgroundColor: "#FFF8E1", 
-    alignItems: "center", 
-    paddingTop: 20 
-  },
 
-  calendarContainer: { 
-    width: "90%", // 크기를 키움
-    height: 420,  // 세로 크기 증가
-    backgroundColor:"#FFFFFF", 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF8E1", // ✅ 배경 유지
+    alignItems: "center",
+    paddingTop: 0, // ✅ 위쪽 패딩 제거
+  },
+  
+  navBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 5, // 🔽 간결한 네비
+    paddingHorizontal: 15,
+    width: "100%", // 전체 너비 채우기
+  },
+  
+  calendarContainer: {
+    width: "90%",
+    height: 420,
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     borderWidth: 1,
     padding: 10,
-    marginTop: 80,
-    overflow: "hidden", // 내부 요소도 둥글게
+    marginTop: 10, // 🔽 자연스럽게 아래 위치
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 5, // Android에서 그림자 효과
+    elevation: 5,
   },
-
+  
+  navTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  calendarContainer: {
+    width: "90%",
+    height: 420,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 10,
+    marginTop: 50,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+  },
   calendar: {
     height: "100%",
     borderRadius: 20,
-    backgroundColor: "#FFFFFF", // 캘린더가 컨테이너를 꽉 채우도록 설정
+    backgroundColor: "#FFFFFF",
   },
-
-  dayContainer: { 
-    width: 50, // 날짜 칸 크기 고정
+  dayContainer: {
+    width: 50,
     height: 40,
-    justifyContent: "center", 
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF", 
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
-    margin: 2, // 날짜 간격 유지
-    position: "relative", // 이모지와 날짜 배치를 위한 설정
-    flexDirection: "column", // ✅ 날짜를 위쪽, 이모지를 아래로 정렬
+    margin: 2,
+    position: "relative",
+    flexDirection: "column",
   },
-
-  dayText: { 
-    fontSize: 18,  
+  dayText: {
+    fontSize: 18,
     color: "#000",
     position: "absolute",
-    bottom: 5, // 날짜 위치를 항상 고정
-    marginBottom: 30, // ✅ 이모지 아래로 날짜를 배치
+    bottom: 5,
+    marginBottom: 30,
   },
-
-  emoji: { 
-    fontSize: 18, 
+  emoji: {
+    fontSize: 18,
     marginTop: 2,
-    backgroundColor: "#FFF5CC", 
-    borderRadius: 10, 
-    minHeight: 20, // 💡 이모지 크기 유지 (없어도 높이 확보)
+    backgroundColor: "#FFF5CC",
+    borderRadius: 10,
+    minHeight: 20,
   },
-
-  emojiContainer: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    Top: 10,
-    padding : 30, 
+  emojiContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 30,
   },
-
-  emojiText: { 
-    fontSize: 16, 
-    fontWeight: "bold", 
-    marginRight: 10 
+  emojiText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 10,
   },
-
-  emojiButton: { 
-    padding: 8, 
-    marginHorizontal: 5, 
-    backgroundColor: "#FFF5CC", 
-    borderRadius: 10 
+  emojiButton: {
+    padding: 8,
+    marginHorizontal: 5,
+    backgroundColor: "#FFF5CC",
+    borderRadius: 10,
   },
-
-  selectedEmoji: { 
-    backgroundColor: "#FFD700", 
-    borderWidth: 1, 
-    borderColor: "#FFA500" 
+  selectedEmoji: {
+    backgroundColor: "#FFD700",
+    borderWidth: 1,
+    borderColor: "#FFA500",
   },
-
-  commentContainer: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    backgroundColor: "#FFF5CC", 
-    borderRadius: 20, 
-    padding: 10, 
-    width: "90%" 
+  commentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF5CC",
+    borderRadius: 20,
+    padding: 10,
+    width: "90%",
   },
-
-  commentInput: { 
-    flex: 1, 
-    fontSize: 14, 
-    color: "#000" 
+  commentInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#000",
   },
-
-  commentButton: { 
-    marginLeft: 10 
+  memoContainer: {
+    width: "90%",
+    backgroundColor: "#FFFBF0",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
   },
-
-  memoContainer: { 
-    width: "90%", 
-    backgroundColor: "#FFFBF0", 
-    borderRadius: 10, 
-    padding: 10, 
-    marginTop: 10 
+  commentItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#FFF",
+    borderRadius: 10,
   },
-
-  commentItem: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    alignItems: "center", 
-    padding: 10, 
-    backgroundColor: "#FFF", 
-    borderRadius: 10 
+  commentText: {
+    fontSize: 14,
+    color: "#000",
   },
-
-  commentActions: { 
-    flexDirection: "row", 
-    gap: 10 
+  commentActions: {
+    flexDirection: "row",
+    gap: 10,
   },
 });

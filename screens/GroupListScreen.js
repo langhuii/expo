@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, TextInput, Modal, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { fetchGroups } from "../api/groupAPI";
+import { fetchGroups, joinGroup } from "../api/groupAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
@@ -11,35 +11,42 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalscreen}>
-        {/* 바깥 클릭 시 닫힘 */}
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)} />
         <View style={styles.menuContainer}>
-          {/* 닫기 버튼 */}
           <TouchableOpacity style={styles.closeButton} onPress={() => setVisible(false)}>
             <Ionicons name="close" size={24} color="black" />
           </TouchableOpacity>
-
           <ScrollView style={styles.scrollContainer}>
-            {/* 그룹 카테고리 */}
-            <Text style={styles.categoryTitle}>그룹 카테고리</Text>
-            <Text>{selectedGroup.category}</Text>
 
-            <View style={styles.divider} />
+  <Image
+    source={
+      selectedGroup.image
+        ? typeof selectedGroup.image === "number"
+          ? selectedGroup.image // 로컬 리소스
+          : { uri: selectedGroup.image.uri || selectedGroup.image } // uri 형태
+        : require("../assets/tokki.jpg") // 기본 이미지
+    }
+    style={styles.groupImageLarge}
+    resizeMode="cover"
+  />
 
-            {/* 그룹 설명 */}
-            <Text style={styles.categoryTitle}>그룹 설명</Text>
-            <Text>{selectedGroup.description}</Text>
+  <Text style={styles.categoryTitle}>그룹 카테고리</Text>
+  <Text>{selectedGroup.category}</Text>
 
-            <View style={styles.divider} />
+  <View style={styles.divider} />
 
-            {/* 그룹 태그 */}
-            <Text style={styles.categoryTitle}>그룹 태그</Text>
-            <View style={styles.tagContainer}>
-              {selectedGroup.tags.map((tag, index) => (
-                <Text key={index} style={styles.tagItem}>{tag}</Text>
-              ))}
-            </View>
-          </ScrollView>
+  <Text style={styles.categoryTitle}>그룹 설명</Text>
+  <Text>{selectedGroup.description}</Text>
+
+  <View style={styles.divider} />
+
+  <Text style={styles.categoryTitle}>그룹 태그</Text>
+  <View style={styles.tagContainer}>
+    {selectedGroup.tags.map((tag, index) => (
+      <Text key={index} style={styles.tagItem}>{tag}</Text>
+    ))}
+  </View>
+</ScrollView>
         </View>
       </View>
     </Modal>
@@ -48,9 +55,10 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
 
 const GroupListScreen = ({ route }) => {
   const navigation = useNavigation();
-  const [menuVisible, setMenuVisible] = useState(false); // 플로팅 메뉴 상태
-  const [selectedGroup, setSelectedGroup] = useState(null); // 선택된 그룹 상태
-  const [searchKeyword, setSearchKeyword] = useState(""); // 태그 검색 상태
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [serverGroups, setServerGroups] = useState([]);
 
   const defaultGroups = [
     {
@@ -91,11 +99,14 @@ const GroupListScreen = ({ route }) => {
     },
   ];
 
-  const [serverGroups, setServerGroups] = useState([]);
-
-  const loadGroups = async () => {
-    const data = await fetchGroups();
-    setServerGroups(data);
+  const loadGroups = async (tag = "") => {
+    const data = await fetchGroups(tag);
+    const converted = data.map(group => ({
+      ...group,
+      tags: group.tags ? group.tags.split(",") : [],
+      image: group.imageUrl ? { uri: group.imageUrl } : require("../assets/tokki.jpg"),
+    }));
+    setServerGroups(converted);
   };
 
   useEffect(() => {
@@ -113,63 +124,64 @@ const GroupListScreen = ({ route }) => {
 
   const allGroups = [...defaultGroups, ...serverGroups];
 
-  // ✅ 태그 기반 필터링
-  const filteredGroups = allGroups.filter(group =>
-    group.tags.some(tag =>
-      tag.toLowerCase().includes(searchKeyword.toLowerCase())
-    )
-  );
-
   const handleJoinGroup = async (group) => {
-    const userId = await AsyncStorage.getItem("userId");
-  
-    if (!userId) {
-      Alert.alert("오류", "로그인이 필요합니다.");
+    if (group.groupId === undefined) {
+      Alert.alert("알림", "가입완료(임시)");
       return;
     }
-  
-    const result = await joinGroup(userId, group.id);
-  
-    if (result) {
-      Alert.alert("성공", `${group.name}에 가입되었습니다!`);
-      loadGroups(); // 이미 있는 함수 재사용
+
+    const result = await joinGroup(group.groupId);
+    if (result !== null) {
+      Alert.alert("성공", `${group.title}에 가입되었습니다!`);
+      loadGroups(searchKeyword);
     } else {
       Alert.alert("실패", "그룹 가입에 실패했습니다.");
     }
   };
 
+  const handleSearch = async () => {
+    await loadGroups(searchKeyword);
+  };
+
   const handleOpenMenu = (group) => {
-    setSelectedGroup(group); // 선택한 그룹의 정보를 상태로 저장
-    setMenuVisible(true); // 플로팅 메뉴 열기
+    setSelectedGroup(group);
+    setMenuVisible(true);
   };
 
   return (
     <View style={styles.container}>
-      {/* 🔼 상단 네비게이션 */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>소속 그룹</Text>
+        <Text style={styles.navTitle}>전체그룹</Text>
         <View style={{ width: 30 }} />
       </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="주제로 검색해보세요 (예: 영화)"
-        value={searchKeyword}
-        onChangeText={setSearchKeyword}
-      />
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+        <TextInput
+          style={[styles.searchInput, { flex: 1, marginRight: 10 }]}
+          placeholder="주제, 태그, 감정으로 검색해보세요 (예: 영화)"
+          value={searchKeyword}
+          onChangeText={setSearchKeyword}
+          onSubmitEditing={handleSearch}
+        />
+        <TouchableOpacity
+          onPress={handleSearch}
+          style={{ backgroundColor: "#FFD700", paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10 }}
+        >
+          <Text style={{ fontWeight: "bold" }}>검색</Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* 📃 그룹 리스트 */}
       <FlatList
-        data={filteredGroups}
-        keyExtractor={(item) => item.id.toString()}
+        data={allGroups}
+        keyExtractor={(item) => item.groupId?.toString() || item.id?.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleOpenMenu(item)}>
             <View style={styles.card}>
               <View style={styles.textContainer}>
-                <Text style={styles.groupName}>{item.name}</Text>
+                <Text style={styles.groupName}>{item.title || item.name}</Text>
                 <Text style={styles.tags}>
                   그룹의 지향점은{"\n"}
                   {item.tags.map((tag, index) => (
@@ -177,26 +189,20 @@ const GroupListScreen = ({ route }) => {
                   ))}
                 </Text>
                 <TouchableOpacity
-            style={styles.joinButton}
-            onPress={() => handleJoinGroup(item)} // 가입하기 버튼 클릭 시 함수 호출
-          >
-            <Text style={styles.joinButtonText}>가입하기</Text>
-          </TouchableOpacity>
+                  style={styles.joinButton}
+                  onPress={() => handleJoinGroup(item)}
+                >
+                  <Text style={styles.joinButtonText}>가입하기</Text>
+                </TouchableOpacity>
               </View>
-
-              <Image
-                source={item.image}
-                style={styles.groupImage}
-              />
+              <Image source={item.image} style={styles.groupImage} />
             </View>
           </TouchableOpacity>
         )}
       />
 
-      {/* 📌 플로팅 메뉴 컴포넌트 */}
       <FloatingMenu visible={menuVisible} setVisible={setMenuVisible} selectedGroup={selectedGroup} />
 
-      {/* ➕ 그룹 추가 버튼 */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate("MakeGroup")}
@@ -206,6 +212,7 @@ const GroupListScreen = ({ route }) => {
     </View>
   );
 };
+
 
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
@@ -222,6 +229,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
+    position: "absolute",
   },
   menuContainer: {
     backgroundColor: "#fff",
@@ -275,10 +283,9 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     fontSize: 14,
-    marginBottom: 10,
   },
   navBar: {
     flexDirection: "row",
@@ -290,8 +297,8 @@ const styles = StyleSheet.create({
   navTitle: {
     fontSize: 18,
     fontWeight: "bold",
-  },
-  card: {
+  },  
+  card: {         //그룹 
     flexDirection: "row",
     backgroundColor: "#FFD675",
     borderRadius: 30,
@@ -301,7 +308,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     width: "98%",
     alignSelf: "center",
-    height: 150, // ✅ 카드 크기 조정 (세로 길게)
+    height: 150, 
   },
   textContainer: {
     flex: 1,
@@ -387,7 +394,12 @@ const styles = StyleSheet.create({
     fontSize: 12,               // 텍스트 크기 조정
     textAlign: "center",        // 텍스트 중앙 정렬
   },
-  
+  groupImageLarge: {
+    width: "100%",
+    height: 200,
+    borderRadius: 50,
+    marginBottom: 15,
+  },
 });
 
 export default GroupListScreen;

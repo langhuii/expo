@@ -17,7 +17,7 @@ const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
   <View style={styles.modalscreen}>
-    {/* 바깥 누르면 닫기 */}
+
     <TouchableOpacity
       style={styles.modalOverlay}
       activeOpacity={1}
@@ -25,7 +25,6 @@ const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
     />
 
     <View style={styles.menuContainer}>
-      {/* ❌ 닫기 버튼 */}
       <TouchableOpacity
         style={styles.closeButton}
         onPress={() => setVisible(false)}
@@ -33,7 +32,6 @@ const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
         <Ionicons name="close" size={24} color="black" />
       </TouchableOpacity>
 
-      {/* <ScrollView>로 플로팅 메뉴 항목 스크롤 가능하게 */}
       <ScrollView style={styles.scrollContainer}>
         {categories.map((category, index) => (
           <View key={index} style={styles.categoryBox}>
@@ -87,7 +85,7 @@ export default function MakeGroupScreen({ navigation }) {
 
   // ✅ 태그 추가 (최대 3개)
   const addTag = () => {
-    if (tagInput.trim() === "") return; // 빈 입력 방지
+    if (tagInput.trim() === "") return; //빈 입력칸 xxx
     if (tags.length >= 3) {
       Alert.alert("알림", "최대 3개의 태그만 등록할 수 있습니다.");
       return;
@@ -109,12 +107,20 @@ export default function MakeGroupScreen({ navigation }) {
       return;
     }
   
+    const emotionMap = {
+      기쁨: "joy",
+      슬픔: "sadness",
+      화남: "anger",
+      평온: "calm",
+      짜증: "anxiety"
+    };
+    
     const groupData = {
       title,
       description,
-      category: selectedCategory === "주제 선택" ? "" : selectedCategory,
-      tags: tags.length > 0 ? tags : ["#새로운모임"],
-      imageUri: groupImage,
+      tags: tags.length > 0 ? tags.join(",") : "#새로운모임",  // 문자열로 변환
+      emotion: emotionMap[selectedCategory] || "",             // 감정 코드로 변환
+      imageUri: groupImage,  // 아직 이미지 처러 못함
     };
   
     const createdGroup = await createGroup(groupData);
@@ -129,7 +135,6 @@ export default function MakeGroupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🔙 뒤로 가기 & 완료 버튼 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={24} color="black" />
@@ -140,7 +145,6 @@ export default function MakeGroupScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* 📸 그룹 이미지 추가 */}
       <View style={styles.imageContainer}>
         <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
           {groupImage ? (
@@ -151,7 +155,6 @@ export default function MakeGroupScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* 제목 입력 */}
       <TextInput 
         style={styles.inputTitle}
         placeholder="제목"
@@ -160,7 +163,6 @@ export default function MakeGroupScreen({ navigation }) {
         onChangeText={setTitle}
       />
 
-      {/* 설명 입력 */}
       <TextInput
         style={styles.inputDescription}
         placeholder="함께하고 싶은 모임 활동을 자세히 소개해주세요 (30자 이상)"
@@ -170,15 +172,12 @@ export default function MakeGroupScreen({ navigation }) {
         onChangeText={setDescription}
       />
 
-      {/* 📌 플로팅 메뉴 버튼 */}
       <TouchableOpacity style={styles.subjectButton} onPress={() => setMenuVisible(true)}>
         <Text style={styles.subjectButtonText}>{selectedCategory}</Text>
       </TouchableOpacity>
 
-      {/* 📌 플로팅 메뉴 컴포넌트 */}
       <FloatingMenu visible={menuVisible} setVisible={setMenuVisible} setSelectedCategory={setSelectedCategory} />
 
-      {/* 🔹 태그 입력 필드 */}
       <Text style={styles.sectionTitle}>태그 입력</Text>
       <View style={styles.tagInputContainer}>
         <TextInput
@@ -190,7 +189,6 @@ export default function MakeGroupScreen({ navigation }) {
         />
       </View>
 
-      {/* 🔹 태그 리스트 */}
       <View style={styles.tagContainer}>
         {tags.map((tag, index) => (
           <View key={index} style={styles.tag}>

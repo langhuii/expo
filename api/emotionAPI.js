@@ -1,14 +1,22 @@
-// api/emotionAPI.js
-const BASE_URL = "http://192.168.0.100:8080"; // Java 서버 주소
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
-export const fetchEmotionStats = async (userId) => {
+const BASE_URL = "http://192.168.0.100:8080"; //백 주소
+
+// 감정 분석 요청
+export const analyzeEmotion = async (text) => {
   try {
-    const response = await fetch(`${BASE_URL}/emotion-stats?userId=${userId}`);
-    if (!response.ok) throw new Error("서버 응답 실패");
-    const data = await response.json();
-    return data;
+    const token = await AsyncStorage.getItem("accessToken");
+    const res = await axios.post(
+      `${BASE_URL}/api/emotion/analyze`,
+      { text },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return res.data; // { emotion: "기쁨" }
   } catch (error) {
-    console.error("감정 통계 불러오기 오류:", error);
+    console.error("감정 분석 실패:", error);
     return null;
   }
 };

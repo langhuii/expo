@@ -18,15 +18,12 @@ import { fetchUserProfile, updateUserProfile } from "../api/userAPI";
 
 export default function MemberProfileScreen() {
   const navigation = useNavigation();
-
-  // 🔹 상태 정의
   const [userId, setUserId] = useState(null);
   const [name, setName] = useState("");
   const [points, setPoints] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
   const [imageUri, setImageUri] = useState(null);
 
-  // 🔹 사용자 정보 불러오기
   useEffect(() => {
     const loadUser = async () => {
       const id = await AsyncStorage.getItem("userId");
@@ -45,7 +42,6 @@ export default function MemberProfileScreen() {
     loadUser();
   }, []);
 
-  // 🔹 이미지 선택 함수
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -67,7 +63,6 @@ export default function MemberProfileScreen() {
     }
   };
 
-  // 🔹 프로필 저장
   const handleSave = async () => {
     if (!userId) return;
 
@@ -79,12 +74,10 @@ export default function MemberProfileScreen() {
     }
   };
 
-  // 🔹 렌더링
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scrollContainer, { flexGrow: 1 }]}>
 
-        {/* 📸 프로필 이미지 */}
         <View style={styles.profileContainer}>
           <TouchableOpacity style={styles.profileImageContainer} onPress={pickImage}>
             <Image
@@ -97,34 +90,32 @@ export default function MemberProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ✏️ 이름 입력 */}
-        <View style={styles.nameInputContainer}>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            style={[styles.nameInput, globalStyles.text]}
-          />
-          <Ionicons name="pencil-outline" size={20} color="black" />
-        </View>
+       <View style={styles.nameRowContainer}>
+          <View style={styles.nameInputWrapper}>
+            <Ionicons name="pencil-outline" size={20} color="black" style={styles.inputIcon} />
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="이름을 입력하세요"
+              style={[styles.nameInputImproved, globalStyles.text]}
+            />
+          </View>
 
-        {/* 📦 카드 목록 */}
+          <TouchableOpacity style={styles.saveButtonInline} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>저장</Text>
+          </TouchableOpacity>
+        </View>
+        
         <View style={styles.cardContainer}>
-          {/* 감정 기록 */}
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate("Calendar", { userId })}
+          >
             <Text style={[styles.cardText, globalStyles.text]}>
               {name} 님의 감정 기록 보러가기
             </Text>
           </TouchableOpacity>
 
-          {/* 포인트 정보 */}
-          <TouchableOpacity style={styles.card}>
-            <Text style={[styles.cardText, globalStyles.text]}>
-              {name} 님의 현재 포인트는 {points} pt 입니다
-            </Text>
-            <Text style={[styles.detailText, globalStyles.textBold]}>▶ 상세보기</Text>
-          </TouchableOpacity>
-
-          {/* 전체 그룹 보기 */}
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate("GroupListScreen")}
@@ -135,7 +126,6 @@ export default function MemberProfileScreen() {
             <Text style={[styles.detailText, globalStyles.textBold]}>▶ 상세보기</Text>
           </TouchableOpacity>
 
-          {/* 가입한 그룹 보기 */}
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate("MyGroups")}
@@ -150,9 +140,6 @@ export default function MemberProfileScreen() {
     </View>
   );
 }
-
-
-// ✅ 스타일 적용
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -164,7 +151,7 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: "center",
-    marginTop: 40, // ✅ 추가
+    marginTop: 40,
   },
   profileImageContainer: {
     position: "relative",
@@ -175,7 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 65,
     borderWidth: 2,
     borderColor: "gray",
-    marginTop: 20, // ✅ 수정: top 제거
+    marginTop: 20,
   },
   addIcon: {
     position: "absolute",
@@ -185,28 +172,48 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 5,
   },
-  nameInputContainer: {
+  nameRowContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FCE8A8",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    width: "80%",
-    marginTop: 20, // ✅ top → marginTop
-  },
-  nameInput: {
-    fontSize: 18,
-    flex: 1,
-    textAlign: "center",
-  },
-  saveButton: {
-    backgroundColor: "#FAD648",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 20,
     marginTop: 20,
+    width: "90%",
+    columnGap: 10,
+  },
+  nameInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF6D3",
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    flex: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  nameInputImproved: {
+    flex: 1,
+    fontSize: 16,
+  },
+  saveButtonInline: {
+    backgroundColor: "#FAD648",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 15,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
   },
   saveButtonText: {
     fontSize: 16,
@@ -215,7 +222,7 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: "90%",
-    marginTop: 30, // ✅ top 제거
+    marginTop: 30,
   },
   card: {
     backgroundColor: "#FCE8A8",

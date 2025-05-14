@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchMyGroups, fetchLeaveGroup } from "../api/groupAPI"; // 탈퇴 기능 추가
-import { Ionicons } from "@expo/vector-icons"; // 상단 바 아이콘용
+import { fetchMyGroups, fetchLeaveGroup } from "../api/groupAPI";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function MyGroupsScreen({ navigation }) {
-  const [myGroups, setMyGroups] = useState([
+  const defaultGroups = [
     {
       id: "default1",
       name: "기본 운동 그룹",
       tags: ["#운동", "#기본"],
       category: "운동",
       description: "기본적으로 포함된 운동 그룹",
-      days: 5,
       image: require("../assets/running.jpg"),
     },
     {
@@ -21,25 +20,20 @@ export default function MyGroupsScreen({ navigation }) {
       tags: ["#독서", "#기본"],
       category: "도서",
       description: "기본적으로 포함된 독서 그룹",
-      days: 10,
       image: require("../assets/book.jpg"),
     },
-  ]); // 기본 그룹을 초기 상태로 설정
+  ];
 
-  // 그룹 클릭 시 GroupFeed로 이동
-  const handleGroupClick = (group) => {
-    navigation.navigate("GroupFeed", { group });  // 그룹 클릭 시 GroupFeed로 이동
-  };
+  const [myGroups, setMyGroups] = useState(defaultGroups);
 
-  // 서버에서 내 그룹 목록 불러오기
   useEffect(() => {
     const load = async () => {
       const userId = await AsyncStorage.getItem("userId");
       if (userId) {
         try {
           const data = await fetchMyGroups(userId);
-          // 기본 그룹 데이터와 서버 데이터 결합
-          setMyGroups((prevGroups) => [...prevGroups, ...data]);
+          const filtered = data.filter(serverGroup => !defaultGroups.some(d => d.id === serverGroup.id));
+          setMyGroups([...defaultGroups, ...filtered]);
         } catch (error) {
           Alert.alert("그룹 목록을 불러오지 못했습니다.", error.message);
         }
@@ -50,22 +44,30 @@ export default function MyGroupsScreen({ navigation }) {
     load();
   }, []);
 
-  // 그룹 탈퇴 함수
-  const handleLeaveGroup = async (groupId) => {
-    const userId = await AsyncStorage.getItem("userId");
+  const handleGroupClick = (group) => {
+    navigation.navigate("GroupFeed", { group });
+  };
 
+  const handleLeaveGroup = async (groupId) => {
+    const isDefault = groupId.toString().startsWith("default");
+
+    if (isDefault) {
+      setMyGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+      Alert.alert("탈퇴 완료", "기본 그룹에서 나갔습니다. (예시..)");
+      return;
+    }
+
+    const userId = await AsyncStorage.getItem("userId");
     if (!userId) {
       Alert.alert("오류", "로그인 상태가 아닙니다.");
       return;
     }
 
     try {
-      // 탈퇴 API 호출
       const result = await fetchLeaveGroup(userId, groupId);
-      if (result.success) {
+      if (result) {
         Alert.alert("탈퇴 성공", "그룹에서 탈퇴되었습니다.");
-        // 탈퇴 후 그룹 목록 갱신
-        setMyGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
+        setMyGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
       } else {
         Alert.alert("탈퇴 실패", "그룹 탈퇴에 실패했습니다.");
       }
@@ -74,7 +76,6 @@ export default function MyGroupsScreen({ navigation }) {
     }
   };
 
-  // 그룹 카드 UI
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleGroupClick(item)}>
       <View style={styles.card}>
@@ -93,10 +94,9 @@ export default function MyGroupsScreen({ navigation }) {
           <Text style={styles.tags}>{item.tags.join(" ")}</Text>
         </View>
 
-        {/* 탈퇴하기 버튼 추가 */}
         <TouchableOpacity
           style={styles.leaveButton}
-          onPress={() => handleLeaveGroup(item.id)} // 탈퇴 함수 호출
+          onPress={() => handleLeaveGroup(item.id)}
         >
           <Text style={styles.leaveButtonText}>탈퇴하기</Text>
         </TouchableOpacity>
@@ -119,7 +119,7 @@ export default function MyGroupsScreen({ navigation }) {
         data={myGroups}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.noGroupsText}>가입한 그룹이 없습니다.</Text>} // 기본 그룹이 없을 경우 표시
+        ListEmptyComponent={<Text style={styles.noGroupsText}>가입한 그룹이 없습니다.</Text>}
       />
     </View>
   );
