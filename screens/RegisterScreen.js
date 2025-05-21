@@ -11,31 +11,39 @@ const RegisterScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
 
   const handleRegister = async () => {
-    if (!username || !birthdate || !email || !password || !phoneNumber) {
-      Alert.alert("입력 오류", "모든 정보를 입력하세요.");
-      return;
+  if (!username || !birthdate || !email || !password || !phoneNumber) {
+    Alert.alert("입력 오류", "모든 정보를 입력하세요.");
+    return;
+  }
+
+  try {
+    const response = await axios.post("http://124.50.249.203:8080/api/users/signup", {
+      username,
+      birthdate,
+      email,
+      password,
+      phoneNumber, // ✅ 백엔드 DTO에 맞춘 필드명
+    });
+
+    if (response.status === 201) {
+      Alert.alert("회원가입 성공", "로그인 화면으로 이동합니다.");
+      navigation.navigate("Login");
+    } else {
+      Alert.alert("회원가입 실패", "다시 시도해주세요.");
     }
 
-    try {
-      const response = await axios.post("https://your-backend.com/api/register", {
-        username,
-        birthdate,
-        email,
-        password,
-        phone_number: phoneNumber,
-      });
-
-      if (response.data.success) {
-        Alert.alert("회원가입 성공", "로그인 화면으로 이동합니다.");
-        navigation.navigate("Login");
-      } else {
-        Alert.alert("회원가입 실패", response.data.message || "다시 시도해주세요.");
-      }
-    } catch (error) {
-      console.error("회원가입 오류:", error);
-      Alert.alert("오류", "서버와 연결할 수 없습니다.");
+  } catch (error) {
+    console.error("❌ 회원가입 오류:", error);
+    if (error.response) {
+      console.warn("📛 응답 상태코드:", error.response.status);
+      console.warn("📛 응답 내용:", error.response.data);
+      Alert.alert("회원가입 실패", error.response.data.message || "서버 오류가 발생했습니다.");
+    } else {
+      Alert.alert("네트워크 오류", "서버와 연결할 수 없습니다.");
     }
-  };
+  }
+};
+
 
   return (
     <Container>

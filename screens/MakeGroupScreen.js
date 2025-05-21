@@ -3,8 +3,9 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView  
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { createGroup } from "../api/groupAPI";
+import * as ImagePicker from "expo-image-picker";
+
 
 
 // ✅ 플로팅 메뉴 (주제 선택)
@@ -69,19 +70,29 @@ export default function MakeGroupScreen({ navigation }) {
   const [menuVisible, setMenuVisible] = useState(false); // 플로팅 메뉴 상태
   const [selectedCategory, setSelectedCategory] = useState("주제 선택"); // 선택된 카테고리
 
-  // ✅ 갤러리에서 사진 선택
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("권한 거부됨", "갤러리 접근 권한이 필요합니다.");
+    return;
+  }
 
-    if (!result.canceled) {
-      setGroupImage(result.assets[0].uri);
-    }
-  };
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaType.IMAGE,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1,
+  });
+
+  console.log("📸 이미지 선택 결과:", result);
+
+  if (!result.canceled) {
+    setGroupImage(result.assets[0].uri);
+    console.log("✅ 저장된 이미지 URI:", result.assets[0].uri);
+  }
+};
+
+
 
   // ✅ 태그 추가 (최대 3개)
   const addTag = () => {

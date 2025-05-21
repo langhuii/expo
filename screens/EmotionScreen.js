@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing
+} from "react-native-reanimated";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
@@ -13,38 +25,41 @@ export default function EmotionScreen({ navigation }) {
       const token = await AsyncStorage.getItem("accessToken");
 
       const analyzeRes = await axios.post(
-        "http://192.168.0.100:8080/api/emotion/analyze",
+        "http://124.50.249.203:8080/api/emotion/analyze",
         { text: emotion },
         {
           headers: { Authorization: `Bearer ${token}` },
-          timeout: 3000,
+          timeout: 3000
         }
       );
+      console.log("🟢 감정 분석 결과:", analyzeRes.data);
 
       const detectedEmotion = analyzeRes.data.emotion;
 
       const recommendRes = await axios.post(
-        "http://192.168.0.100:8080/api/recommendations",
-        { emotion: detectedEmotion },
+        "http://124.50.249.203:8080/api/recommend",
+        { text: detectedEmotion },
         {
           headers: { Authorization: `Bearer ${token}` },
-          timeout: 3000,
+          timeout: 3000
         }
       );
+      console.log("🟣 추천 결과:", recommendRes.data);
 
       return {
         emotion: detectedEmotion,
-        content: recommendRes.data.recommendations,
+        content: recommendRes.data.recommendations
       };
 
     } catch (error) {
-      console.warn("⚠️ 감정 분석 또는 추천 실패:", error.message);
-      return {
-        emotion: "기본",
-        content: null,
-      };
-      
-    }
+  console.warn("⚠️ 감정 분석 또는 추천 실패:", error.message);
+  if (error.response) {
+    console.warn("📛 서버 응답 상태:", error.response.status);
+    console.warn("📛 서버 응답 내용:", error.response.data);
+  } else {
+    console.warn("📛 응답이 없음:", error);
+  }
+}
   };
 
   const circle1X = useSharedValue(0);
@@ -52,16 +67,40 @@ export default function EmotionScreen({ navigation }) {
   const circle3X = useSharedValue(0);
   const circle4X = useSharedValue(0);
 
-  const animatedStyle1 = useAnimatedStyle(() => ({ transform: [{ translateX: circle1X.value }] }));
-  const animatedStyle2 = useAnimatedStyle(() => ({ transform: [{ translateX: circle2X.value }] }));
-  const animatedStyle3 = useAnimatedStyle(() => ({ transform: [{ translateX: circle3X.value }] }));
-  const animatedStyle4 = useAnimatedStyle(() => ({ transform: [{ translateX: circle4X.value }] }));
+  const animatedStyle1 = useAnimatedStyle(() => ({
+    transform: [{ translateX: circle1X.value }]
+  }));
+  const animatedStyle2 = useAnimatedStyle(() => ({
+    transform: [{ translateX: circle2X.value }]
+  }));
+  const animatedStyle3 = useAnimatedStyle(() => ({
+    transform: [{ translateX: circle3X.value }]
+  }));
+  const animatedStyle4 = useAnimatedStyle(() => ({
+    transform: [{ translateX: circle4X.value }]
+  }));
 
   useEffect(() => {
-    circle1X.value = withRepeat(withTiming(50, { duration: 2000, easing: Easing.inOut(Easing.ease) }), -1, true);
-    circle2X.value = withRepeat(withTiming(-50, { duration: 2500, easing: Easing.inOut(Easing.ease) }), -1, true);
-    circle3X.value = withRepeat(withTiming(30, { duration: 3000, easing: Easing.inOut(Easing.ease) }), -1, true);
-    circle4X.value = withRepeat(withTiming(-40, { duration: 3500, easing: Easing.inOut(Easing.ease) }), -1, true);
+    circle1X.value = withRepeat(
+      withTiming(50, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    circle2X.value = withRepeat(
+      withTiming(-50, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    circle3X.value = withRepeat(
+      withTiming(30, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    circle4X.value = withRepeat(
+      withTiming(-40, { duration: 3500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
   }, []);
 
   return (
@@ -97,7 +136,7 @@ export default function EmotionScreen({ navigation }) {
           if (result) {
             navigation.navigate("RecommendationScreen", {
               userEmotion: result.emotion,
-              contentList: result.content,
+              contentList: result.content
             });
           }
         }}
@@ -108,6 +147,7 @@ export default function EmotionScreen({ navigation }) {
     </View>
   );
 }
+
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {

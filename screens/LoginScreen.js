@@ -2,15 +2,37 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
 import styled from "styled-components/native";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    // ✅ 로그인 정보 검증 없이 바로 이동
+const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert("입력 오류", "이메일과 비밀번호를 모두 입력해주세요.");
+    return;
+  }
+
+  try {
+    const response = await await axios.post("http://124.50.249.203:8080/api/auth/login", {
+      email,
+      password,
+    });
+
+
+    const { token } = response.data;
+
+    // ✅ 로그인 정보 저장
+    await AsyncStorage.setItem("token", token);
+
+    // ✅ 메인 화면 이동
     navigation.replace("Main");
-  };
+  } catch (error) {
+    console.error("❌ 로그인 실패:", error.response?.data || error.message);
+    Alert.alert("로그인 실패", error.response?.data?.message || "이메일 또는 비밀번호가 올바르지 않습니다.");
+  }
+};
 
   return (
     <Container>
