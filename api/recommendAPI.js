@@ -1,13 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://124.50.249.203:8080"; //백주소소
+const BASE_URL = "http://124.50.249.203:8080"; //백주소
 
 export const fetchRecommendations = async (emotion) => {
   try {
-    const token = await AsyncStorage.getItem("accessToken");
+    const token = await AsyncStorage.getItem("token");
     const res = await axios.post(
-      `${BASE_URL}/api/recommendations`,
+      `${BASE_URL}/api/recommend`,
       { emotion },
       {
         headers: { Authorization: `Bearer ${token}` },

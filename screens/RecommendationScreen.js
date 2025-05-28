@@ -12,7 +12,7 @@ export default function RecommendationScreen({ route }) {
   const { userEmotion, contentList } = route.params;
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [Username, setUserName] = useState("사용자");
+  const [Username, setUserName] = useState("username");
 
   const contentMap = {
     슬픔: [
@@ -74,43 +74,6 @@ export default function RecommendationScreen({ route }) {
   
       {/* 🎬 영화 */}
       <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 130, left: 20 }]}>
-      {recommended[0]?.image && (
-    <Image source={recommended[0].image} style={styles.circleImage} resizeMode="cover" />
-  )}
-  {recommended[0]?.imageUrl && (
-    <Image source={{ uri: recommended[0].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-  )}
-        <View style={styles.overlayContent}>
-          <Text style={styles.circleText}>
-            🎬 {recommended[0]?.type}{"\n"}{recommended[0]?.title}
-          </Text>
-          <Text style={styles.circleSubText}>
-            {recommended[0]?.description}
-          </Text>
-        </View>
-      </Animated.View>
-      
-  
-      {/* 🎧 음악 */}
-      <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 150, right: -60 }]}>
-      {recommended[1]?.image && (
-    <Image source={recommended[1].image} style={styles.circleImage} resizeMode="cover" />
-  )}
-  {recommended[1]?.imageUrl && (
-    <Image source={{ uri: recommended[1].imageUrl }} style={styles.circleImage} resizeMode="cover" />
-  )}
-        <View style={styles.overlayContent}>
-          <Text style={styles.circleText}>
-            🎧 {recommended[1]?.type}{"\n"}{recommended[1]?.title}
-          </Text>
-          <Text style={styles.circleSubText}>
-            {recommended[1]?.description}
-          </Text>
-        </View>
-      </Animated.View>
-  
-      {/* 📚 도서 */}
-      <Animated.View style={[styles.circle, styles.circleBlue, animatedStyle3, { bottom: 80, left: -90 }]}>
       {recommended[2]?.image && (
     <Image source={recommended[2].image} style={styles.circleImage} resizeMode="cover" />
   )}
@@ -119,16 +82,17 @@ export default function RecommendationScreen({ route }) {
   )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
-            📚 {recommended[2]?.type}{"\n"}{recommended[2]?.title}
+            🎬 {recommended[2]?.type}{"\n"}{recommended[2]?.title}
           </Text>
           <Text style={styles.circleSubText}>
             {recommended[2]?.description}
           </Text>
         </View>
       </Animated.View>
+      
   
-      {/* 📺 드라마 */}
-      <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 180, right: -30 }]}>
+      {/* 🎧 음악 */}
+      <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 150, right: -60 }]}>
       {recommended[3]?.image && (
     <Image source={recommended[3].image} style={styles.circleImage} resizeMode="cover" />
   )}
@@ -137,10 +101,46 @@ export default function RecommendationScreen({ route }) {
   )}
         <View style={styles.overlayContent}>
           <Text style={styles.circleText}>
-            📺 {recommended[3]?.type}{"\n"}{recommended[3]?.title}
+            🎧 {recommended[3]?.type}{"\n"}{recommended[3]?.title}
           </Text>
           <Text style={styles.circleSubText}>
             {recommended[3]?.description}
+          </Text>
+        </View>
+      </Animated.View>
+  
+      {/* 📚 도서 */}
+      <Animated.View style={[styles.circle, styles.circleBlue, animatedStyle3, { bottom: 80, left: -90 }]}>
+      {recommended[0]?.image && (
+    <Image source={recommended[0].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[0]?.imageUrl && (
+    <Image source={{ uri: recommended[0].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            📚 {recommended[0]?.type}{"\n"}{recommended[0]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[0]?.description}
+          </Text>
+        </View>
+      </Animated.View>
+  
+      {/* 📺 드라마 */}
+      <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 180, right: -30 }]}>
+      {recommended[1]?.image && (
+    <Image source={recommended[3].image} style={styles.circleImage} resizeMode="cover" />
+  )}
+  {recommended[1]?.imageUrl && (
+    <Image source={{ uri: recommended[1].imageUrl }} style={styles.circleImage} resizeMode="cover" />
+  )}
+        <View style={styles.overlayContent}>
+          <Text style={styles.circleText}>
+            📺 {recommended[1]?.type}{"\n"}{recommended[1]?.title}
+          </Text>
+          <Text style={styles.circleSubText}>
+            {recommended[1]?.description}
           </Text>
         </View>
       </Animated.View>

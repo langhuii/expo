@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  Easing
+  Easing,
 } from "react-native-reanimated";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -22,44 +22,48 @@ export default function EmotionScreen({ navigation }) {
 
   const sendEmotionToServer = async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
+      const token = await AsyncStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
 
+      // 1단계: 감정 분석
       const analyzeRes = await axios.post(
         "http://124.50.249.203:8080/api/emotion/analyze",
         { text: emotion },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 3000
-        }
+        { headers }
       );
       console.log("🟢 감정 분석 결과:", analyzeRes.data);
 
-      const detectedEmotion = analyzeRes.data.emotion;
+      const detectedEmotion = analyzeRes.data.topEmotion;
 
-      const recommendRes = await axios.post(
+      // 2단계: 감정 기록
+      await axios.post(
         "http://124.50.249.203:8080/api/recommend",
         { text: detectedEmotion },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 3000
-        }
+        { headers }
+      );
+
+      // 3단계: 추천 콘텐츠 요청
+      const recommendRes = await axios.post(
+        "http://124.50.249.203:8080/api/recommend",
+        { emotion: detectedEmotion },
+        { headers }
       );
       console.log("🟣 추천 결과:", recommendRes.data);
 
       return {
         emotion: detectedEmotion,
-        content: recommendRes.data.recommendations
+        content: recommendRes.data.recommendations,
       };
-
     } catch (error) {
-  console.warn("⚠️ 감정 분석 또는 추천 실패:", error.message);
-  if (error.response) {
-    console.warn("📛 서버 응답 상태:", error.response.status);
-    console.warn("📛 서버 응답 내용:", error.response.data);
-  } else {
-    console.warn("📛 응답이 없음:", error);
-  }
-}
+      console.warn("⚠️ 감정 분석 또는 추천 실패:", error.message);
+      if (error.response) {
+        console.warn("📛 서버 응답 상태:", error.response.status);
+        console.warn("📛 서버 응답 내용:", error.response.data);
+      } else {
+        console.warn("📛 응답이 없음:", error);
+      }
+      return null;
+    }
   };
 
   const circle1X = useSharedValue(0);
@@ -68,16 +72,16 @@ export default function EmotionScreen({ navigation }) {
   const circle4X = useSharedValue(0);
 
   const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle1X.value }]
+    transform: [{ translateX: circle1X.value }],
   }));
   const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle2X.value }]
+    transform: [{ translateX: circle2X.value }],
   }));
   const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle3X.value }]
+    transform: [{ translateX: circle3X.value }],
   }));
   const animatedStyle4 = useAnimatedStyle(() => ({
-    transform: [{ translateX: circle4X.value }]
+    transform: [{ translateX: circle4X.value }],
   }));
 
   useEffect(() => {
@@ -114,10 +118,38 @@ export default function EmotionScreen({ navigation }) {
       </View>
 
       <View style={styles.background}>
-        <Animated.View style={[styles.circle, styles.circleYellow, animatedStyle1, { top: 140, left: 30 }]} />
-        <Animated.View style={[styles.circle, styles.circleGreen, animatedStyle2, { top: 170, right: -70 }]} />
-        <Animated.View style={[styles.circle, styles.circleBlue, animatedStyle3, { bottom: 50, left: -100 }]} />
-        <Animated.View style={[styles.circle, styles.circlePink, animatedStyle4, { bottom: 200, right: -30 }]} />
+        <Animated.View
+          style={[
+            styles.circle,
+            styles.circleYellow,
+            animatedStyle1,
+            { top: 140, left: 30 },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.circle,
+            styles.circleGreen,
+            animatedStyle2,
+            { top: 170, right: -70 },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.circle,
+            styles.circleBlue,
+            animatedStyle3,
+            { bottom: 50, left: -100 },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.circle,
+            styles.circlePink,
+            animatedStyle4,
+            { bottom: 200, right: -30 },
+          ]}
+        />
       </View>
 
       <TextInput
@@ -129,14 +161,17 @@ export default function EmotionScreen({ navigation }) {
       />
 
       <TouchableOpacity
-        style={[styles.nextButton, emotion.trim() === "" && styles.disabledButton]}
+        style={[
+          styles.nextButton,
+          emotion.trim() === "" && styles.disabledButton,
+        ]}
         disabled={emotion.trim() === ""}
         onPress={async () => {
           const result = await sendEmotionToServer();
           if (result) {
             navigation.navigate("RecommendationScreen", {
               userEmotion: result.emotion,
-              contentList: result.content
+              contentList: result.content,
             });
           }
         }}

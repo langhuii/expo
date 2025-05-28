@@ -1,74 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ProgressBar } from '../components/ProgressBar'; // 감정 통계 그래프 컴포넌트
-import { fetchUserProfile } from '../api/userAPI'; // 사용자 정보 API
-import { fetchEmotionStats } from '../api/emotionAPI'; // 감정 통계 API
-
+import { useIsFocused } from '@react-navigation/native'; // ✅ 추가
 
 export default function HomeScreen({ navigation }) {
-  const [profileImage, setProfileImage] = useState(null);  // 프로필 이미지
-  const [emotionStats, setEmotionStats] = useState(null);  // 감정 통계
-  const [username, setUsername] = useState('사용자'); // 사용자 이름
+  const [username, setUsername] = useState('사용자');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isFocused = useIsFocused(); // ✅ 화면 포커스 여부
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const storedName = await AsyncStorage.getItem('username');
 
-
-  // 사용자 데이터 및 감정 통계 로드
-useEffect(() => {
-  const loadUserData = async () => {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
-
-    try {
-      const userData = await fetchUserProfile();
-      if (userData) {
-        setProfileImage(userData.imageUrl);
-        setUsername(userData.name);
-        setIsLoggedIn(true); // ✅ 로그인된 상태로 설정
-      } else {
+        if (token && storedName) {
+          setUsername(storedName);
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (e) {
+        console.error('유저 데이터 불러오기 오류:', e);
         setIsLoggedIn(false);
       }
+    };
 
-      const statsData = await fetchEmotionStats();
-      setEmotionStats(
-        statsData || {
-          joy: 0,
-          sadness: 0,
-          anger: 0,
-          calm: 0,
-          anxiety: 0,
-        }
-      );
-    } catch (error) {
-      console.error("사용자 데이터를 불러오는데 실패했습니다.", error);
-      setIsLoggedIn(false);
-      setEmotionStats({
-        joy: 0,
-        sadness: 0,
-        anger: 0,
-        calm: 0,
-        anxiety: 0,
-      });
+    if (isFocused) {
+      loadUserData(); // ✅ 포커스 될 때마다 데이터 로드
     }
-  };
-
-  loadUserData();
-}, []);
+  }, [isFocused]);
 
   return (
-  <View style={styles.container}>
-    {isLoggedIn ? (
-      <>
-        {/* ✅ 로그인 된 사용자용 UI */}
-        <View style={styles.profileCard}>
-          <Image
-            source={profileImage ? { uri: profileImage } : require('../assets/profile.jpg')}
-            style={styles.profileImage}
-          />
+    <View style={styles.container}>
+      {isLoggedIn ? (
+        <>
           <Text style={styles.welcomeText}>
             <Text style={styles.italicText}>{username}</Text> 님 반가워요 !
           </Text>
@@ -79,38 +45,22 @@ useEffect(() => {
             <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
             <Ionicons name="arrow-forward" size={18} color="black" />
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>이 달의 감정통계</Text>
-          {emotionStats ? (
-            <>
-              <ProgressBar color="#A7C7FF" progress={emotionStats.joy} />
-              <ProgressBar color="#F8AFA6" progress={emotionStats.sadness} />
-              <ProgressBar color="#F9E79F" progress={emotionStats.anger} />
-              <ProgressBar color="#A9DFBF" progress={emotionStats.calm} />
-              <ProgressBar color="#E8B8F1" progress={emotionStats.anxiety} />
-            </>
-          ) : (
-            <Text>감정 데이터를 불러오는 중...</Text>
-          )}
-        </View>
-      </>
-    ) : (
-      <>
-        {/* ❌ 로그인 안 된 경우 */}
-        <Text style={{ fontSize: 18, marginVertical: 20 }}>로그인이 필요합니다.</Text>
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.registerButtonText}>로그인 하기</Text>
-        </TouchableOpacity>
-      </>
-    )}
-  </View>
-);
+        </>
+      ) : (
+        <>
+          <Text style={{ fontSize: 18, marginVertical: 20 }}>로그인이 필요합니다.</Text>
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.registerButtonText}>로그인 하기</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
 }
+
 
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
