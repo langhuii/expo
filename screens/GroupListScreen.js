@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, TextInput, Modal, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Modal,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { fetchGroups, joinGroup } from "../api/groupAPI";
@@ -11,42 +22,49 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalscreen}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)} />
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setVisible(false)}
+        />
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setVisible(false)}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setVisible(false)}
+          >
             <Ionicons name="close" size={24} color="black" />
           </TouchableOpacity>
           <ScrollView style={styles.scrollContainer}>
+            <Image
+              source={
+                selectedGroup.image
+                  ? typeof selectedGroup.image === "number"
+                    ? selectedGroup.image
+                    : { uri: selectedGroup.image.uri || selectedGroup.image }
+                  : require("../assets/tokki.jpg")
+              }
+              style={styles.groupImageLarge}
+              resizeMode="cover"
+            />
+            <Text style={styles.categoryTitle}>그룹 카테고리</Text>
+            <Text>{selectedGroup.category}</Text>
 
-  <Image
-    source={
-      selectedGroup.image
-        ? typeof selectedGroup.image === "number"
-          ? selectedGroup.image // 로컬 리소스
-          : { uri: selectedGroup.image.uri || selectedGroup.image } // uri 형태
-        : require("../assets/tokki.jpg") // 기본 이미지
-    }
-    style={styles.groupImageLarge}
-    resizeMode="cover"
-  />
+            <View style={styles.divider} />
 
-  <Text style={styles.categoryTitle}>그룹 카테고리</Text>
-  <Text>{selectedGroup.category}</Text>
+            <Text style={styles.categoryTitle}>그룹 설명</Text>
+            <Text>{selectedGroup.description}</Text>
 
-  <View style={styles.divider} />
+            <View style={styles.divider} />
 
-  <Text style={styles.categoryTitle}>그룹 설명</Text>
-  <Text>{selectedGroup.description}</Text>
-
-  <View style={styles.divider} />
-
-  <Text style={styles.categoryTitle}>그룹 태그</Text>
-  <View style={styles.tagContainer}>
-    {selectedGroup.tags.map((tag, index) => (
-      <Text key={index} style={styles.tagItem}>{tag}</Text>
-    ))}
-  </View>
-</ScrollView>
+            <Text style={styles.categoryTitle}>그룹 태그</Text>
+            <View style={styles.tagContainer}>
+              {selectedGroup.tags.map((tag, index) => (
+                <Text key={index} style={styles.tagItem}>
+                  {tag}
+                </Text>
+              ))}
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -57,7 +75,9 @@ const GroupListScreen = ({ route }) => {
   const navigation = useNavigation();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [searchKeyword, setSearchKeyword] = useState("");
+  const [titleKeyword, setTitleKeyword] = useState("");
+  const [tagKeyword, setTagKeyword] = useState("");
+  const [selectedEmotion, setSelectedEmotion] = useState("");
   const [serverGroups, setServerGroups] = useState([]);
 
   const defaultGroups = [
@@ -99,9 +119,16 @@ const GroupListScreen = ({ route }) => {
     },
   ];
 
-  const loadGroups = async (tag = "") => {
-    const data = await fetchGroups(tag);
-    const converted = data.map(group => ({
+  const emotionOptions = ["", "joy", "sadness", "anger", "calm", "anxiety"];
+
+  const loadGroups = async () => {
+    const data = await fetchGroups({
+      title: titleKeyword,
+      tag: tagKeyword,
+      emotion: selectedEmotion,
+    });
+
+    const converted = data.map((group) => ({
       ...group,
       tags: group.tags ? group.tags.split(",") : [],
       image: group.imageUrl ? { uri: group.imageUrl } : require("../assets/tokki.jpg"),
@@ -133,14 +160,14 @@ const GroupListScreen = ({ route }) => {
     const result = await joinGroup(group.groupId);
     if (result !== null) {
       Alert.alert("성공", `${group.title}에 가입되었습니다!`);
-      loadGroups(searchKeyword);
+      loadGroups();
     } else {
       Alert.alert("실패", "그룹 가입에 실패했습니다.");
     }
   };
 
   const handleSearch = async () => {
-    await loadGroups(searchKeyword);
+    await loadGroups();
   };
 
   const handleOpenMenu = (group) => {
@@ -158,19 +185,44 @@ const GroupListScreen = ({ route }) => {
         <View style={{ width: 30 }} />
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+      <View style={{ marginBottom: 10 }}>
         <TextInput
-          style={[styles.searchInput, { flex: 1, marginRight: 10 }]}
-          placeholder="주제, 태그, 감정으로 검색해보세요 (예: 영화)"
-          value={searchKeyword}
-          onChangeText={setSearchKeyword}
-          onSubmitEditing={handleSearch}
+          style={[styles.searchInput, { marginBottom: 8 }]}
+          placeholder="제목으로 검색"
+          value={titleKeyword}
+          onChangeText={setTitleKeyword}
         />
+
+        <TextInput
+          style={[styles.searchInput, { marginBottom: 8 }]}
+          placeholder="태그로 검색"
+          value={tagKeyword}
+          onChangeText={setTagKeyword}
+        />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+          {emotionOptions.map((emotion) => (
+            <TouchableOpacity
+              key={emotion}
+              onPress={() => setSelectedEmotion(emotion)}
+              style={{
+                backgroundColor: selectedEmotion === emotion ? "#FFD700" : "#eee",
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 12,
+                marginRight: 10,
+              }}
+            >
+              <Text>{emotion === "" ? "전체 감정" : emotion}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         <TouchableOpacity
           onPress={handleSearch}
-          style={{ backgroundColor: "#FFD700", paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10 }}
+          style={{ backgroundColor: "#FFD700", padding: 10, borderRadius: 10 }}
         >
-          <Text style={{ fontWeight: "bold" }}>검색</Text>
+          <Text style={{ fontWeight: "bold", textAlign: "center" }}>검색</Text>
         </TouchableOpacity>
       </View>
 
@@ -185,7 +237,9 @@ const GroupListScreen = ({ route }) => {
                 <Text style={styles.tags}>
                   그룹의 지향점은{"\n"}
                   {item.tags.map((tag, index) => (
-                    <Text key={index} style={styles.tagText}>{tag} </Text>
+                    <Text key={index} style={styles.tagText}>
+                      {tag} 
+                    </Text>
                   ))}
                 </Text>
                 <TouchableOpacity
@@ -201,7 +255,11 @@ const GroupListScreen = ({ route }) => {
         )}
       />
 
-      <FloatingMenu visible={menuVisible} setVisible={setMenuVisible} selectedGroup={selectedGroup} />
+      <FloatingMenu
+        visible={menuVisible}
+        setVisible={setMenuVisible}
+        selectedGroup={selectedGroup}
+      />
 
       <TouchableOpacity
         style={styles.addButton}
@@ -212,6 +270,8 @@ const GroupListScreen = ({ route }) => {
     </View>
   );
 };
+
+export default GroupListScreen;
 
 
 // ✅ 스타일 설정
@@ -402,4 +462,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GroupListScreen;

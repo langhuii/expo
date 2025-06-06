@@ -1,116 +1,102 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://124.50.249.203:8080"; //백 주소
+const BASE_URL = "http://124.50.249.203:8080";
 
-// ✅ 인증 헤더 생성
 const getAuthHeader = async () => {
   const token = await AsyncStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// ✅ 그룹 생성 (JSON + 이미지 포함, 아직 이미지 백X)
+
 export const createGroup = async (groupData) => {
-  const formData = new FormData();
-
-  const groupInfo = {
-    title: groupData.title,
-    description: groupData.description,
-    tags: groupData.tags,
-    emotion: groupData.emotion,
-  };
-
-  formData.append(
-    "group",
-    new Blob([JSON.stringify(groupInfo)], { type: "application/json" })
-  );
-
-  if (groupData.imageUri) {
-    formData.append("image", {
-      uri: groupData.imageUri,
-      name: "group.jpg",
-      type: "image/jpeg",
-    });
-  }
-
   try {
-    const res = await axios.post(`${BASE_URL}/groups`, formData, {
+    const token = await AsyncStorage.getItem("token");
+    const formData = new FormData();
+
+    formData.append("creatorId", groupData.creatorId);
+    formData.append("title", groupData.title);
+    formData.append("description", groupData.description);
+    formData.append("tags", groupData.tags);
+    formData.append("emotion", groupData.emotion);
+
+    // 이미지가 있을 경우에만 추가
+    if (groupData.imageUri) {
+      formData.append("image", {
+        uri: groupData.imageUri,
+        type: "image/jpeg",
+        name: "group.jpg"
+      });
+    }
+
+    const response = await axios.post(`${BASE_URL}/api/groups`, formData, {
       headers: {
-        "Content-Type": "multipart/form-data",
-        ...(await getAuthHeader()),
-      },
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data"
+      }
     });
-    return res.data;
-  } catch (err) {
-    console.error("❌ 그룹 생성 실패:", err.response?.data || err.message);
-    return null;
-  }
-};
 
-// ✅ 그룹 가입하기
-export const joinGroup = async (groupId) => {
-  try {
-    const res = await axios.post(`${BASE_URL}/groups/${groupId}/join`, null, {
-      headers: await getAuthHeader(),
-    });
-    return res.data;
-  } catch (error) {
-    console.error("❌ 그룹 가입 실패:", error.message);
+    return response.data;
+  } catch (err) {
+    console.error("🚨 그룹 생성 실패:", err.response?.data || err.message);
     return null;
   }
 };
 
 // ✅ 그룹 탈퇴하기
 export const leaveGroup = async (groupId) => {
+  console.log("🚀 [leaveGroup] 요청 그룹ID:", groupId);
   try {
-    const res = await axios.post(`${BASE_URL}/groups/${groupId}/leave`, null, {
-      headers: await getAuthHeader(),
+    const headers = await getAuthHeader();
+    const res = await axios.post(`${BASE_URL}/api/groups/${groupId}/leave`, null, {
+      headers,
     });
+
+    console.log("✅ [leaveGroup] 성공:", res.data);
     return res.data;
   } catch (error) {
-    console.error("❌ 그룹 탈퇴 실패:", error.message);
+    console.error("❌ [leaveGroup] 실패:", error.response?.data || error.message);
     return null;
   }
 };
 
-// ✅ 그룹 목록 가져오기 (전체 or 태그 기반)
-export const fetchGroups = async (tag = "") => {
+// ✅ 그룹 목록 검색
+export const fetchGroups = async ({ title = "", tag = "", emotion = "" }) => {
+  console.log("🔍 [fetchGroups] 검색 조건:", { title, tag, emotion });
+
   try {
-    const url = tag
-      ? `${BASE_URL}/groups/search?tag=${encodeURIComponent(tag)}`
-      : `${BASE_URL}/groups`;
-    const res = await axios.get(url, {
-      headers: await getAuthHeader(),
+    const headers = await getAuthHeader();
+    const params = {};
+    if (title) params.title = title;
+    if (tag) params.tag = tag;
+    if (emotion) params.emotion = emotion;
+
+    const res = await axios.get(`${BASE_URL}/api/groups/search`, {
+      headers,
+      params,
     });
+
+    console.log("✅ [fetchGroups] 결과:", res.data);
     return res.data;
   } catch (error) {
-    console.error("", error.message);
+    console.error("❌ [fetchGroups] 실패:", error.response?.data || error.message);
     return [];
   }
 };
 
 // ✅ 내 그룹 목록 가져오기
 export const fetchMyGroups = async (userId) => {
+  console.log("📥 [fetchMyGroups] 유저ID:", userId);
   try {
+    const headers = await getAuthHeader();
     const res = await axios.get(`${BASE_URL}/users/${userId}/groups`, {
-      headers: await getAuthHeader(),
+      headers,
     });
-    return res.data;
-  } catch (error) {
-    console.error("❌ 내 그룹 목록 불러오기 실패:", error.message);
-    return [];
-  }
-};
 
-// ✅ 특정 그룹 상세 정보 가져오기
-export const fetchGroupById = async (groupId) => {
-  try {
-    const res = await axios.get(`${BASE_URL}/groups/${groupId}`, {
-      headers: await getAuthHeader(),
-    });
+    console.log("✅ [fetchMyGroups] 결과:", res.data);
     return res.data;
   } catch (error) {
-    console.error("❌ 그룹 상세 정보 불러오기 실패:", error.message);
-    return null;
+    console.error("❌ [fetchMyGroups] 실패:", error.response?.data || error.message);
+    return [];
   }
 };

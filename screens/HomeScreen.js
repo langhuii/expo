@@ -1,43 +1,126 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Dimensions,
+  ActivityIndicator,
+  TouchableOpacity
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useIsFocused } from '@react-navigation/native'; // ✅ 추가
+import { BarChart } from 'react-native-chart-kit';
+import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
+
+const screenWidth = Dimensions.get('window').width;
+const BASE_URL = 'http://124.50.249.203:8080';
+
+const parseJwt = (token) => {
+  try {
+    if (!token) throw new Error('토큰 없음');
+
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    const parsed = JSON.parse(jsonPayload);
+    console.log('✅ JWT Payload:', parsed);
+    return parsed;
+  } catch (e) {
+    console.error('❌ JWT 파싱 실패:', e);
+    return null;
+  }
+};
 
 export default function HomeScreen({ navigation }) {
-  const [username, setUsername] = useState('사용자');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const isFocused = useIsFocused(); // ✅ 화면 포커스 여부
+  const [username, setUsername] = useState('');
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
+  const [emotionStats, setEmotionStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const loadUserData = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
         const token = await AsyncStorage.getItem('token');
-        const storedName = await AsyncStorage.getItem('username');
+        const decoded = parseJwt(token);
 
-        if (token && storedName) {
-          setUsername(storedName);
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
+        if (!decoded) {
+          console.error('❌ 디코딩 실패로 인해 사용자 정보를 불러올 수 없습니다.');
+          setLoading(false);
+          return;
         }
-      } catch (e) {
-        console.error('유저 데이터 불러오기 오류:', e);
-        setIsLoggedIn(false);
+
+        const userId = decoded.userId || decoded.id || decoded.sub;
+        console.log('✔️ 유저 아이디:', userId);
+        await AsyncStorage.setItem('userId', userId.toString());
+
+        const profileRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log('🎯 백엔드 프로필 응답:', profileRes.data);
+        setUsername(profileRes.data.username);
+        setProfileImageUrl(profileRes.data.profileImageUrl);
+
+        const statsRes = await axios.get(`${BASE_URL}/api/emotion/stats/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('📊 감정 통계 응답:', statsRes.data);
+        setEmotionStats(statsRes.data);
+      } catch (error) {
+        console.error('데이터 로딩 오류:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (isFocused) {
-      loadUserData(); // ✅ 포커스 될 때마다 데이터 로드
-    }
-  }, [isFocused]);
+    fetchData(); // 최초 실행
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const chartData = emotionStats
+    ? {
+        labels: Object.keys(emotionStats),
+        datasets: [{ data: Object.values(emotionStats) }]
+      }
+    : {
+        labels: ['joy', 'sadness', 'anger', 'calm', 'anxiety'],
+        datasets: [{ data: [0, 0, 0, 0, 0] }]
+      };
 
   return (
-    <View style={styles.container}>
-      {isLoggedIn ? (
+    <ScrollView contentContainerStyle={styles.container}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#000" />
+      ) : (
         <>
-          <Text style={styles.welcomeText}>
-            <Text style={styles.italicText}>{username}</Text> 님 반가워요 !
-          </Text>
+          <View style={styles.profileCard}>
+            <Image
+              source={
+                profileImageUrl && profileImageUrl !== 'null'
+                  ? { uri: profileImageUrl }
+                  : require('../assets/profile.jpg')
+              }
+              style={styles.profileImage}
+            />
+            <Text style={styles.welcomeText}>
+              <Text style={styles.italicText}>{username}</Text> 님 반가워요!
+            </Text>
+          </View>
+
           <TouchableOpacity
             style={styles.analysisButton}
             onPress={() => navigation.navigate('Emotion')}
@@ -45,23 +128,42 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
             <Ionicons name="arrow-forward" size={18} color="black" />
           </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <Text style={{ fontSize: 18, marginVertical: 20 }}>로그인이 필요합니다.</Text>
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={styles.registerButtonText}>로그인 하기</Text>
-          </TouchableOpacity>
+
+          <Text style={styles.chartTitle}>📊 이번 달 감정 통계</Text>
+          <BarChart
+            data={chartData}
+            width={screenWidth - 40}
+            height={220}
+            fromZero
+            segments={5}
+            yAxisInterval={1}
+            maxValue={Math.max(...Object.values(emotionStats || {}), 5)}
+            showBarTops={true}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              decimalPlaces: 0,
+              barPercentage: 0.6,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: () => '#000',
+              propsForBackgroundLines: {
+                stroke: '#e0e0e0',
+                strokeDasharray: '',
+              },
+              propsForLabels: {
+                fontSize: 12,
+              }
+            }}
+            style={{ marginVertical: 8, borderRadius: 16 }}
+            yAxisSuffix="회"
+            verticalLabelRotation={30}
+          />
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }
-
-
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {
@@ -109,6 +211,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     elevation: 5,
+    marginBottom:30,
   },
   analysisText: {
     fontSize: 20,
@@ -144,6 +247,12 @@ registerButtonText: {
   fontWeight: "bold",
   fontSize: 16,
 },
+chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center'
+  },
 
 });
 

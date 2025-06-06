@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -36,6 +37,14 @@ export default function RecommendationScreen({ route }) {
   };
 
   useEffect(() => {
+
+    const fetchUsername = async () => {
+    const storedName = await AsyncStorage.getItem("username");
+    console.log("✅ 저장된 Username:", storedName); // 🔍 로그 추가
+    if (storedName) setUserName(storedName);
+    };
+
+    fetchUsername();
     if (contentList && contentList.length === 4) {
       setRecommended(contentList);
     } else {

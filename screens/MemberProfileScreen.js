@@ -14,7 +14,9 @@ import { globalStyles } from "../styles/globalStyles";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchUserProfile, updateUserProfile } from "../api/userAPI";
+import axios from "axios";
+
+const BASE_URL = "http://124.50.249.203:8080";
 
 export default function MemberProfileScreen() {
   const navigation = useNavigation();
@@ -27,15 +29,27 @@ export default function MemberProfileScreen() {
   useEffect(() => {
     const loadUser = async () => {
       const id = await AsyncStorage.getItem("userId");
-      if (!id) return;
+      const token = await AsyncStorage.getItem("token");
+      if (!id || !token) return;
 
       setUserId(id);
-      const user = await fetchUserProfile(id);
 
-      if (user) {
-        setName(user.name || "사용자");
+      try {
+        const res = await axios.get(`${BASE_URL}/api/users/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const user = res.data;
+        setName(user.username || "사용자");
         setPoints(user.points || 0);
-        setProfileImage(user.imageUrl ? { uri: user.imageUrl } : null);
+        // ↓ 변경된 부분: 상대경로로 내려오는 profileImageUrl을 절대 경로로 변환
+        if (user.profileImageUrl) {
+          setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` }); // 변경
+        } else {
+          setProfileImage(null);
+        }
+      } catch (error) {
+        console.error("프로필 불러오기 실패:", error);
       }
     };
 
@@ -50,7 +64,7 @@ export default function MemberProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -64,12 +78,50 @@ export default function MemberProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!userId) return;
+    console.log("✅ 저장 버튼 클릭됨");
 
-    const updated = await updateUserProfile(userId, name, imageUri);
-    if (updated) {
-      Alert.alert("성공", "프로필이 업데이트되었습니다!");
-    } else {
+    if (!userId) return;
+    const token = await AsyncStorage.getItem("token");
+
+    try {
+     const formData = new FormData();
+    formData.append("username", name); // ✅ 이름 추가
+    if (imageUri) {
+      formData.append("profileImage", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: "profile.jpg"
+    });
+  }
+
+      console.log("📦 전송할 데이터:", formData);
+      const res = await axios.put(`${BASE_URL}/api/users/${userId}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+
+        },
+        transformRequest: (data, headers) => {
+        return data; // 이게 있어야 형식 깨짐 방지됨
+       },
+      });
+
+      if (res.status === 200) {
+        await AsyncStorage.setItem("username", name);
+        Alert.alert("성공", "프로필이 업데이트되었습니다!");
+
+        // 저장 후 최신 사용자 정보 다시 불러오기
+        const updatedRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const updatedUser = updatedRes.data;
+        setName(updatedUser.username || "사용자");
+        // ↓ 변경된 부분: 절대 경로로 이미지 다시 세팅
+        if (updatedUser.profileImageUrl) {
+          setProfileImage({ uri: `${BASE_URL}${updatedUser.profileImageUrl}` }); // 변경
+        }
+      }
+    } catch (err) {
+      console.error("❌ 프로필 업데이트 오류:", err.response?.data || err.message);
       Alert.alert("실패", "프로필 업데이트에 실패했습니다.");
     }
   };
@@ -77,7 +129,6 @@ export default function MemberProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scrollContainer, { flexGrow: 1 }]}>
-
         <View style={styles.profileContainer}>
           <TouchableOpacity style={styles.profileImageContainer} onPress={pickImage}>
             <Image
@@ -90,7 +141,7 @@ export default function MemberProfileScreen() {
           </TouchableOpacity>
         </View>
 
-       <View style={styles.nameRowContainer}>
+        <View style={styles.nameRowContainer}>
           <View style={styles.nameInputWrapper}>
             <Ionicons name="pencil-outline" size={20} color="black" style={styles.inputIcon} />
             <TextInput
@@ -100,12 +151,11 @@ export default function MemberProfileScreen() {
               style={[styles.nameInputImproved, globalStyles.text]}
             />
           </View>
-
           <TouchableOpacity style={styles.saveButtonInline} onPress={handleSave}>
             <Text style={styles.saveButtonText}>저장</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.cardContainer}>
           <TouchableOpacity
             style={styles.card}
@@ -140,6 +190,7 @@ export default function MemberProfileScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

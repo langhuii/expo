@@ -1,148 +1,139 @@
 import React, { useState } from "react";
-import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView  
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { createGroup } from "../api/groupAPI";
 import * as ImagePicker from "expo-image-picker";
 
-
-
-// ✅ 플로팅 메뉴 (주제 선택)
 const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
   const categories = [
-    { title: "감정", items: ["기쁨", "슬픔", "화남","평온","짜증"] },
-
+    { title: "감정", items: ["기쁨", "슬픔", "화남", "평온", "짜증"] },
   ];
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-  <View style={styles.modalscreen}>
-
-    <TouchableOpacity
-      style={styles.modalOverlay}
-      activeOpacity={1}
-      onPress={() => setVisible(false)}
-    />
-
-    <View style={styles.menuContainer}>
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => setVisible(false)}
-      >
-        <Ionicons name="close" size={24} color="black" />
-      </TouchableOpacity>
-
-      <ScrollView style={styles.scrollContainer}>
-        {categories.map((category, index) => (
-          <View key={index} style={styles.categoryBox}>
-            <Text style={styles.categoryTitle}>{category.title}</Text>
-            <View style={styles.divider} />
-            <View style={styles.tagContainer}>
-              {category.items.map((item, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.tagButton}
-                  onPress={() => {
-                    setSelectedCategory(item);
-                    setVisible(false);
-                  }}
-                >
-                  <Text style={styles.tagText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  </View>
-</Modal>
+      <View style={styles.modalscreen}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)} />
+        <View style={styles.menuContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setVisible(false)}>
+            <Ionicons name="close" size={24} color="black" />
+          </TouchableOpacity>
+          <ScrollView style={styles.scrollContainer}>
+            {categories.map((category, index) => (
+              <View key={index} style={styles.categoryBox}>
+                <Text style={styles.categoryTitle}>{category.title}</Text>
+                <View style={styles.divider} />
+                <View style={styles.tagContainer}>
+                  {category.items.map((item, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.tagButton}
+                      onPress={() => {
+                        setSelectedCategory(item);
+                        setVisible(false);
+                      }}
+                    >
+                      <Text style={styles.tagText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 };
 
 export default function MakeGroupScreen({ navigation }) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState([]); // 태그 리스트
-  const [tagInput, setTagInput] = useState(""); // 태그 입력값
+  const [description, setcontent] = useState("");
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
   const [groupImage, setGroupImage] = useState(null);
-  const [menuVisible, setMenuVisible] = useState(false); // 플로팅 메뉴 상태
-  const [selectedCategory, setSelectedCategory] = useState("주제 선택"); // 선택된 카테고리
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("주제 선택");
 
   const pickImage = async () => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== "granted") {
-    Alert.alert("권한 거부됨", "갤러리 접근 권한이 필요합니다.");
-    return;
-  }
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("권한 거부됨", "갤러리 접근 권한이 필요합니다.");
+      return;
+    }
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaType.IMAGE,
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 1,
-  });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
 
-  console.log("📸 이미지 선택 결과:", result);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      setGroupImage(uri);
+      console.log("✅ 저장된 이미지 URI:", uri);
+    } else {
+      Alert.alert("선택 취소됨", "이미지를 선택하지 않았습니다.");
+    }
+  };
 
-  if (!result.canceled) {
-    setGroupImage(result.assets[0].uri);
-    console.log("✅ 저장된 이미지 URI:", result.assets[0].uri);
-  }
-};
-
-
-
-  // ✅ 태그 추가 (최대 3개)
   const addTag = () => {
-    if (tagInput.trim() === "") return; //빈 입력칸 xxx
+    if (tagInput.trim() === "") return;
     if (tags.length >= 3) {
       Alert.alert("알림", "최대 3개의 태그만 등록할 수 있습니다.");
       return;
     }
-
-    setTags([...tags, `#${tagInput.trim()}`]); // 태그 추가
-    setTagInput(""); // 입력 필드 초기화
+    setTags([...tags, `#${tagInput.trim()}`]);
+    setTagInput("");
   };
 
-  // ✅ 태그 삭제 기능
   const removeTag = (index) => {
     setTags(tags.filter((_, i) => i !== index));
   };
 
-  // ✅ 그룹 생성 완료 버튼 클릭
   const handleCreateGroup = async () => {
     if (title.trim() === "" || description.length < 30) {
       Alert.alert("오류", "제목을 입력하고 설명을 30자 이상 작성해주세요.");
       return;
     }
-  
+
+    const userId = await AsyncStorage.getItem("userId");
+    if (!userId) {
+      Alert.alert("로그인 필요", "사용자 정보를 찾을 수 없습니다.");
+      return;
+    }
+
     const emotionMap = {
       기쁨: "joy",
       슬픔: "sadness",
       화남: "anger",
       평온: "calm",
-      짜증: "anxiety"
+      짜증: "anxiety",
     };
-    
+
     const groupData = {
+      creatorId: userId,
       title,
       description,
-      tags: tags.length > 0 ? tags.join(",") : "#새로운모임",  // 문자열로 변환
-      emotion: emotionMap[selectedCategory] || "",             // 감정 코드로 변환
-      imageUri: groupImage,  // 아직 이미지 처러 못함
+      tags: tags.length > 0 ? tags.join(",") : "#새로운모임",
+      emotion: emotionMap[selectedCategory] || "",
+      imageUri: groupImage,
     };
-  
+
+    console.log("📝 그룹 생성 요청 데이터:", groupData);
     const createdGroup = await createGroup(groupData);
-  
+    console.log("🚀 서버 응답:", createdGroup);
+
     if (createdGroup) {
       Alert.alert("성공", "그룹이 생성되었습니다!");
       navigation.navigate("GroupListScreen", { newGroup: createdGroup });
     } else {
       Alert.alert("실패", "그룹 생성에 실패했습니다.");
     }
-  };  
+  };
 
   return (
     <View style={styles.container}>
@@ -166,7 +157,7 @@ export default function MakeGroupScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <TextInput 
+      <TextInput
         style={styles.inputTitle}
         placeholder="제목"
         placeholderTextColor="#BDBDBD"
@@ -175,19 +166,23 @@ export default function MakeGroupScreen({ navigation }) {
       />
 
       <TextInput
-        style={styles.inputDescription}
+        style={styles.inputcontent}
         placeholder="함께하고 싶은 모임 활동을 자세히 소개해주세요 (30자 이상)"
         placeholderTextColor="#BDBDBD"
         multiline
         value={description}
-        onChangeText={setDescription}
+        onChangeText={setcontent}
       />
 
       <TouchableOpacity style={styles.subjectButton} onPress={() => setMenuVisible(true)}>
         <Text style={styles.subjectButtonText}>{selectedCategory}</Text>
       </TouchableOpacity>
 
-      <FloatingMenu visible={menuVisible} setVisible={setMenuVisible} setSelectedCategory={setSelectedCategory} />
+      <FloatingMenu
+        visible={menuVisible}
+        setVisible={setMenuVisible}
+        setSelectedCategory={setSelectedCategory}
+      />
 
       <Text style={styles.sectionTitle}>태그 입력</Text>
       <View style={styles.tagInputContainer}>
@@ -196,7 +191,7 @@ export default function MakeGroupScreen({ navigation }) {
           placeholder="태그 입력 후 Enter"
           value={tagInput}
           onChangeText={setTagInput}
-          onSubmitEditing={addTag} // Enter 키 입력 시 태그 추가
+          onSubmitEditing={addTag}
         />
       </View>
 
@@ -354,7 +349,7 @@ closeButton: {
   padding: 5,
   zIndex: 3,
 },
-inputDescription: {
+inputcontent: {
   height: 120,            
   borderWidth: 1,
   borderColor: "#ccc",
@@ -365,5 +360,13 @@ inputDescription: {
   marginBottom: 20,
   backgroundColor: "#FFF",  
 },
+groupImage: {
+  width: 100,
+  height: 100,
+  marginTop:25,
+  borderRadius: 100,
+  resizeMode: "cover",
+}
+
 });
 
