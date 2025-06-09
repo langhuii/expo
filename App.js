@@ -23,7 +23,8 @@ import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import RecommendationScreen from "./screens/RecommendationScreen";
 import MyGroupsScreen from "./screens/MyGroupsScreen";
 import GroupFeedScreen from "./screens/GroupFeedScreen"; 
-import GroupChatScreen from "./screens/GroupChatScreen"; 
+import GroupChatScreen from "./screens/GroupChatScreen";
+import StoryScreen from "./screens/StoryScreen";
 
 
 
@@ -123,6 +124,8 @@ export default function App() {
         <Stack.Screen name="RecommendationScreen" component={RecommendationScreen} />
         <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
         <Stack.Screen name="GroupFeed" component={GroupFeedScreen} /> 
+        <Stack.Screen name="GroupChat" component={GroupChatScreen} /> 
+        <Stack.Screen name="StoryScreen" component={StoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
