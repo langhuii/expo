@@ -1,80 +1,168 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Dimensions,
+  ActivityIndicator,
+  TouchableOpacity
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ProgressBar } from '../components/ProgressBar'; // 감정 통계 그래프 컴포넌트
-import { fetchUserProfile } from '../api/userAPI'; // 사용자 정보 API
-import { fetchEmotionStats } from '../api/emotionAPI'; // 감정 통계 API
+import { BarChart } from 'react-native-chart-kit';
+import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
+
+const screenWidth = Dimensions.get('window').width;
+const BASE_URL = 'http://192.168.0.83:8080';
+
+const parseJwt = (token) => {
+  try {
+    if (!token) throw new Error('토큰 없음');
+
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    const parsed = JSON.parse(jsonPayload);
+    console.log('✅ JWT Payload:', parsed);
+    return parsed;
+  } catch (e) {
+    console.error('❌ JWT 파싱 실패:', e);
+    return null;
+  }
+};
 
 export default function HomeScreen({ navigation }) {
-  const [profileImage, setProfileImage] = useState(null);  // 프로필 이미지
-  const [emotionStats, setEmotionStats] = useState(null);  // 감정 통계
-  const [username, setUsername] = useState('사용자'); // 사용자 이름
+  const [username, setUsername] = useState('');
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
+  const [emotionStats, setEmotionStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 사용자 데이터 및 감정 통계 로드
   useEffect(() => {
-    const loadUserData = async () => {
-      const userId = await AsyncStorage.getItem('userId'); // 저장된 사용자 ID 가져오기
-      if (!userId) return;
-
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        // 사용자 프로필 데이터 가져오기
-        const userData = await fetchUserProfile(userId);
-        if (userData) {
-          setProfileImage(userData.imageUrl); // 프로필 이미지
-          setUsername(userData.name); // 사용자 이름
+        const token = await AsyncStorage.getItem('token');
+        const decoded = parseJwt(token);
+
+        if (!decoded) {
+          console.error('❌ 디코딩 실패로 인해 사용자 정보를 불러올 수 없습니다.');
+          setLoading(false);
+          return;
         }
 
-        // 감정 통계 데이터 가져오기
-        const statsData = await fetchEmotionStats(userId);
-        if (statsData) {
-          setEmotionStats(statsData); // 감정 통계 데이터
-        }
+        const userId = decoded.userId || decoded.id || decoded.sub;
+        console.log('✔️ 유저 아이디:', userId);
+
+        const profileRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log('🎯 백엔드 프로필 응답:', profileRes.data);
+        setUsername(profileRes.data.username);
+        setProfileImageUrl(profileRes.data.profileImageUrl);
+
+        const statsRes = await axios.get(`${BASE_URL}/api/emotion/stats/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('📊 감정 통계 응답:', statsRes.data);
+        setEmotionStats(statsRes.data);
       } catch (error) {
-        console.error('사용자 데이터를 불러오는데 실패했습니다.', error);
+        console.error('데이터 로딩 오류:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUserData(); // 데이터 로드
-  }, []);
+    fetchData(); // 최초 실행
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const chartData = emotionStats
+    ? {
+        labels: Object.keys(emotionStats),
+        datasets: [{ data: Object.values(emotionStats) }]
+      }
+    : {
+        labels: ['joy', 'sadness', 'anger', 'calm', 'anxiety'],
+        datasets: [{ data: [0, 0, 0, 0, 0] }]
+      };
 
   return (
-    <View style={styles.container}>
-      {/* 프로필 카드 */}
-      <View style={styles.profileCard}>
-        <Image
-          source={profileImage ? { uri: profileImage } : require('../assets/profile.jpg')}
-          style={styles.profileImage}
-        />
-        <Text style={styles.welcomeText}>
-          <Text style={styles.italicText}>{username}</Text> 님 반가워요 !
-        </Text>
-        <TouchableOpacity style={styles.analysisButton} onPress={() => navigation.navigate('Emotion')}>
-          <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
-          <Ionicons name="arrow-forward" size={18} color="black" />
-        </TouchableOpacity>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#000" />
+      ) : (
+        <>
+          <View style={styles.profileCard}>
+            <Image
+              source={
+                profileImageUrl && profileImageUrl !== 'null'
+                  ? { uri: profileImageUrl }
+                  : require('../assets/profile.jpg')
+              }
+              style={styles.profileImage}
+            />
+            <Text style={styles.welcomeText}>
+              <Text style={styles.italicText}>{username}</Text> 님 반가워요!
+            </Text>
+          </View>
 
-      {/* 감정 통계 */}
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>이 달의 감정통계</Text>
-        {emotionStats ? (
-          <>
-            <ProgressBar color="#A7C7FF" progress={emotionStats.joy} />
-            <ProgressBar color="#F8AFA6" progress={emotionStats.sadness} />
-            <ProgressBar color="#F9E79F" progress={emotionStats.anger} />
-            <ProgressBar color="#A9DFBF" progress={emotionStats.calm} />
-            <ProgressBar color="#E8B8F1" progress={emotionStats.anxiety} />
-          </>
-        ) : (
-          <Text>감정 데이터를 불러오는 중...</Text>
-        )}
-      </View>
-    </View>
+          <TouchableOpacity
+            style={styles.analysisButton}
+            onPress={() => navigation.navigate('Emotion')}
+          >
+            <Text style={styles.analysisText}>내 감정 분석하러 가기</Text>
+            <Ionicons name="arrow-forward" size={18} color="black" />
+          </TouchableOpacity>
+
+          <Text style={styles.chartTitle}>📊 이번 달 감정 통계</Text>
+          <BarChart
+            data={chartData}
+            width={screenWidth - 40}
+            height={220}
+            fromZero
+            segments={5}
+            yAxisInterval={1}
+            maxValue={Math.max(...Object.values(emotionStats || {}), 5)}
+            showBarTops={true}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              decimalPlaces: 0,
+              barPercentage: 0.6,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: () => '#000',
+              propsForBackgroundLines: {
+                stroke: '#e0e0e0',
+                strokeDasharray: '',
+              },
+              propsForLabels: {
+                fontSize: 12,
+              }
+            }}
+            style={{ marginVertical: 8, borderRadius: 16 }}
+            yAxisSuffix="회"
+            verticalLabelRotation={30}
+          />
+        </>
+      )}
+    </ScrollView>
   );
 }
-
-
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   container: {
@@ -122,6 +210,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     elevation: 5,
+    marginBottom:30,
   },
   analysisText: {
     fontSize: 20,
@@ -144,5 +233,25 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
+  registerButton: {
+  marginTop: 30,
+  backgroundColor: "#A7C7FF",
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+  borderRadius: 10,
+  elevation: 3,
+},
+registerButtonText: {
+  color: "white",
+  fontWeight: "bold",
+  fontSize: 16,
+},
+chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center'
+  },
+
 });
 

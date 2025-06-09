@@ -62,7 +62,7 @@ const GroupFeedScreen = ({ route }) => {
         <View style={{ width: 30 }} />
         <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate("MakeGroup")}
+        onPress={() => navigation.navigate("GroupChat")}
       >
         <Ionicons name="chatbubble-outline" size={30} color="black" />
       </TouchableOpacity>

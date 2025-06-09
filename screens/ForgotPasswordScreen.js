@@ -13,19 +13,23 @@ const ForgotPasswordScreen = ({ navigation }) => {
     }
 
     try {
-      const response = await axios.post("https://your-backend.com/api/forgot-password", {
-        email,
-      });
+      const response = await axios.post(
+        `http://192.168.0.83:8080/api/users/forgot-password`,
+        null,
+        {
+          params: { email },
+        }
+      );
 
-      if (response.data.success) {
-        Alert.alert("이메일 전송됨", "비밀번호 재설정 링크가 이메일로 전송되었습니다.");
-        navigation.navigate("Login");
-      } else {
-        Alert.alert("오류", response.data.message || "다시 시도해주세요.");
-      }
+      Alert.alert("성공", "임시 비밀번호가 이메일로 전송되었습니다.");
+      navigation.navigate("Login");
     } catch (error) {
-      console.error("비밀번호 찾기 오류:", error);
-      Alert.alert("서버 오류", "서버와 연결할 수 없습니다.");
+      console.error("비밀번호 찾기 오류:", error.response?.data || error.message);
+      if (error.response?.status === 400) {
+        Alert.alert("실패", "해당 이메일로 등록된 사용자가 없습니다.");
+      } else {
+        Alert.alert("오류", "서버와 연결할 수 없습니다.");
+      }
     }
   };
 

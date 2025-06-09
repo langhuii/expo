@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.0.100:8080"; //백 주소
+const BASE_URL = "http://124.50.249.203:8080"; //백 주소
 
 // ✅ 인증 헤더 생성
 const getAuthHeader = async () => {

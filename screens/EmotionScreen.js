@@ -13,7 +13,7 @@ export default function EmotionScreen({ navigation }) {
       const token = await AsyncStorage.getItem("accessToken");
 
       const analyzeRes = await axios.post(
-        "http://192.168.0.100:8080/api/emotion/analyze",
+        "http://192.168.0.83:8080/api/emotion/analyze",
         { text: emotion },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -24,7 +24,7 @@ export default function EmotionScreen({ navigation }) {
       const detectedEmotion = analyzeRes.data.emotion;
 
       const recommendRes = await axios.post(
-        "http://192.168.0.100:8080/api/recommendations",
+        "http://192.168.0.83:8080/api/recommendations",
         { emotion: detectedEmotion },
         {
           headers: { Authorization: `Bearer ${token}` },

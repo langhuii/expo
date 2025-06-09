@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import styled from "styled-components/native";
-import axios from "axios";
+import { loginUser } from "../api/loginAPI";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = () => {
-    // ✅ 로그인 정보 검증 없이 바로 이동
-    navigation.replace("Main");
+    loginUser(email, password, () => {
+      navigation.replace("Main");
+    });
   };
 
   return (
@@ -17,7 +18,7 @@ const LoginScreen = ({ navigation }) => {
       <Logo source={{ uri: "https://your-image-url.com/logo.png" }} />
       <InputContainer>
         <Label>Email</Label>
-        <Input 
+        <Input
           placeholder="Enter your email"
           value={email}
           onChangeText={setEmail}
@@ -25,7 +26,7 @@ const LoginScreen = ({ navigation }) => {
           autoCapitalize="none"
         />
         <Label>Password</Label>
-        <Input 
+        <Input
           placeholder="Enter your password"
           value={password}
           onChangeText={setPassword}
@@ -45,7 +46,6 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-// Styled Components
 const Container = styled.View`
   flex: 1;
   background-color: #f9f3e7;

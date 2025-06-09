@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Java 백엔드 서버 주소로 수정
-const BASE_URL = "http://192.168.0.100:8080";
+const BASE_URL = "http://124.50.249.203:8080";
 
 /**
  * 사용자 정보 가져오기 (GET)
