@@ -17,7 +17,8 @@ import { fetchGroups, joinGroup } from "../api/groupAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://124.50.249.203:8080"; 
-const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap }) => {
+
+const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap,  userId,handleDeleteGroup }) => {
 
   if (!selectedGroup) return null;
 
@@ -67,6 +68,35 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap }) => {
       </Text>
     ))}
   </View>
+  {selectedGroup.creatorId === Number(userId) && (
+    <TouchableOpacity
+      style={{
+        backgroundColor: "#FF6B6B",        // 🔴 진한 빨강 배경
+        paddingVertical: 12,               // 🧩 높이 확보
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        marginTop: 20,
+        alignSelf: "center",               // 👈 중앙 정렬
+        width: "80%",                      // 👈 폭 고정
+        elevation: 3,                      // Android 그림자
+        shadowColor: "#000",               // iOS 그림자
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      }}
+      onPress={() => handleDeleteGroup(selectedGroup.groupId)}
+    >
+      <Text style={{
+        color: "white",
+        fontWeight: "bold",
+        textAlign: "center",
+        fontSize: 16,
+      }}>
+        그룹 삭제
+      </Text>
+    </TouchableOpacity>
+  )}
+
 </ScrollView>
 
         </View>
@@ -76,6 +106,7 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap }) => {
 };
 
 const GroupListScreen = ({ route }) => {
+
   const navigation = useNavigation();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -83,23 +114,32 @@ const GroupListScreen = ({ route }) => {
   const [tagKeyword, setTagKeyword] = useState("");
   const [selectedEmotion, setSelectedEmotion] = useState("");
   const [serverGroups, setServerGroups] = useState([]);
-const handleJoinGroup = async (group) => {
-  if (!group.groupId) {
-    Alert.alert("알림", "그룹 ID가 유효하지 않습니다.");
-    return;
-  }
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+  const fetchUserId = async () => {
+    const storedId = await AsyncStorage.getItem("userId");
+    setUserId(Number(storedId)); // ❗ 반드시 필요!
+  };
+  fetchUserId();
+  }, []);
+  const handleJoinGroup = async (group) => {
+    if (!group.groupId) {
+      Alert.alert("알림", "그룹 ID가 유효하지 않습니다.");
+      return;
+    }
 
   const userId = await AsyncStorage.getItem("userId"); // ✅ 유저 ID 가져오기
   const result = await joinGroup(group.groupId, userId);
 
-if (result !== null) {
-  Alert.alert("성공", `${group.title || group.name}에 가입되었습니다!`);
-  loadGroups();
-} else {
-  Alert.alert("실패", "이미 가입된 그룹이거나 문제가 발생했습니다.");
-}
+  if (result !== null) {
+    Alert.alert("성공", `${group.title || group.name}에 가입되었습니다!`);
+    loadGroups();
+  } else {
+    Alert.alert("실패", "이미 가입된 그룹이거나 문제가 발생했습니다.");
+  }
 
-};
+  };
 
 
 
@@ -155,13 +195,47 @@ if (result !== null) {
     }, [route.params?.newGroup])
   );
 
-const handleSearch = async () => {
-  console.log("🔍 검색 시작");
-  console.log("제목:", titleKeyword);
-  console.log("태그:", tagKeyword);
-  console.log("감정:", selectedEmotion);
-  await loadGroups();
-};
+    const handleSearch = async () => {
+      console.log("🔍 검색 시작");
+      console.log("제목:", titleKeyword);
+      console.log("태그:", tagKeyword);
+      console.log("감정:", selectedEmotion);
+      await loadGroups();
+    };
+    const handleDeleteGroup = async (groupId) => {
+      Alert.alert("삭제 확인", "정말로 이 그룹을 삭제하시겠습니까?", [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem("token");
+
+              const response = await fetch(`${BASE_URL}/api/groups/${groupId}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (response.ok) {
+                Alert.alert("삭제 성공", "그룹이 삭제되었습니다.");
+                setMenuVisible(false); // 모달 닫기
+                loadGroups(); // 리스트 갱신
+              } else {
+                const errorText = await response.text();
+                console.log("❌ 삭제 실패:", errorText);
+                Alert.alert("실패", "삭제 권한이 없거나 문제가 발생했습니다.");
+              }
+            } catch (error) {
+              console.error("❌ 삭제 오류:", error);
+              Alert.alert("오류", "삭제 중 문제가 발생했습니다.");
+            }
+          },
+        },
+      ]);
+    };
 
 
   const handleOpenMenu = (group) => {
@@ -259,8 +333,10 @@ const handleSearch = async () => {
       <FloatingMenu
         visible={menuVisible}
         setVisible={setMenuVisible}
-      selectedGroup={selectedGroup}
+        selectedGroup={selectedGroup}
         emotionMap={emotionMap}
+        userId={userId} // 👈 추가
+        handleDeleteGroup={handleDeleteGroup} 
       />
 
       <TouchableOpacity
@@ -269,7 +345,7 @@ const handleSearch = async () => {
       >
         <Ionicons name="add" size={30} color="black" />
       </TouchableOpacity>
-    </View>
+    </View>   
   );
 };
 

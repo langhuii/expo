@@ -6,6 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { createGroup } from "../api/groupAPI";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+
 
 const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
   const categories = [
@@ -58,24 +60,33 @@ export default function MakeGroupScreen({ navigation }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("주제 선택");
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("권한 거부됨", "갤러리 접근 권한이 필요합니다.");
-      return;
-    }
+const pickImage = async () => {
+     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    alert("갤러리 접근 권한이 필요합니다.");
+    return;
+  }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images, // 수정: MediaTypeOptions.Images
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1,
+  });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setGroupImage(uri);
-      console.log("✅ 저장된 이미지 URI:", uri);
+  if (!result.canceled && result.assets.length > 0) {
+    const rawUri = result.assets[0].uri;
+
+    // ✅ 이미지 변환 (특정 Android 권한 이슈 방지)
+    const manipulated = await ImageManipulator.manipulateAsync(
+        rawUri,
+        [], // 편집 없음
+        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setImageUri(manipulated.uri);
+      setProfileImage({ uri: manipulated.uri });
+      console.log("✅ 변환된 이미지 URI:", manipulated.uri);
     } else {
       Alert.alert("선택 취소됨", "이미지를 선택하지 않았습니다.");
     }
