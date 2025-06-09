@@ -68,8 +68,12 @@ export default function HomeScreen({ navigation }) {
 
         console.log('🎯 백엔드 프로필 응답:', profileRes.data);
         setUsername(profileRes.data.username);
-        setProfileImageUrl(profileRes.data.profileImageUrl);
-
+        if (profileRes.data.profileImageUrl) {
+            const refreshed = `${BASE_URL}${profileRes.data.profileImageUrl}?t=${Date.now()}`;
+            setProfileImageUrl(refreshed);
+          } else {
+            setProfileImageUrl(null);
+          }
         const statsRes = await axios.get(`${BASE_URL}/api/emotion/stats/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });

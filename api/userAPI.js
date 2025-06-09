@@ -42,7 +42,6 @@ export const updateUserProfile = async (userId, name, imageUri) => {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
-      // ❌ content-type 명시하지 마세요 — 자동으로 multipart/form-data로 처리됨
     },
     body: formData,
   });

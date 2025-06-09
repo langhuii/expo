@@ -55,10 +55,12 @@ export default function MemberProfileScreen() {
           setPoints(user.points || 0);
 
           if (user.profileImageUrl) {
-            setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` });
+              const refreshedUrl = `${BASE_URL}${user.profileImageUrl}?t=${Date.now()}`;
+              setProfileImage({ uri: refreshedUrl });
           } else {
             setProfileImage(null);
           }
+
 
         } catch (error) {
           console.error("❌ 프로필 불러오기 실패");
@@ -134,9 +136,10 @@ const pickImage = async () => {
         setPoints(user.points || 0);
 
         if (user.profileImageUrl) {
-          setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` });
+            const refreshedUrl = `${BASE_URL}${user.profileImageUrl}?t=${Date.now()}`;
+            setProfileImage({ uri: refreshedUrl });
         } else {
-          setProfileImage(null);
+            setProfileImage(null);
         }
 
         Alert.alert("성공", "프로필이 업데이트되었습니다!");
