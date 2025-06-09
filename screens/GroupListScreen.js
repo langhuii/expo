@@ -16,7 +16,9 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { fetchGroups, joinGroup } from "../api/groupAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
+const BASE_URL = "http://124.50.249.203:8080"; 
+const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap }) => {
+
   if (!selectedGroup) return null;
 
   return (
@@ -34,37 +36,39 @@ const FloatingMenu = ({ visible, setVisible, selectedGroup }) => {
           >
             <Ionicons name="close" size={24} color="black" />
           </TouchableOpacity>
-          <ScrollView style={styles.scrollContainer}>
-            <Image
-              source={
-                selectedGroup.image
-                  ? typeof selectedGroup.image === "number"
-                    ? selectedGroup.image
-                    : { uri: selectedGroup.image.uri || selectedGroup.image }
-                  : require("../assets/tokki.jpg")
-              }
-              style={styles.groupImageLarge}
-              resizeMode="cover"
-            />
-            <Text style={styles.categoryTitle}>그룹 카테고리</Text>
-            <Text>{selectedGroup.category}</Text>
+         <ScrollView style={styles.scrollContainer}>
+  <Image
+    source={
+      selectedGroup.image
+        ? typeof selectedGroup.image === "number"
+          ? selectedGroup.image
+          : { uri: selectedGroup.image.uri || selectedGroup.image }
+        : require("../assets/tokki.jpg")
+    }
+    style={styles.groupImageLarge}
+    resizeMode="cover"
+  />
 
-            <View style={styles.divider} />
+  <Text style={styles.categoryTitle}>감정 카테고리</Text>
+  <Text>{emotionMap[selectedGroup.emotion] || "기타"}</Text>
 
-            <Text style={styles.categoryTitle}>그룹 설명</Text>
-            <Text>{selectedGroup.description}</Text>
+  <View style={styles.divider} />
 
-            <View style={styles.divider} />
+  <Text style={styles.categoryTitle}>그룹 설명</Text>
+  <Text>{selectedGroup.description}</Text>
 
-            <Text style={styles.categoryTitle}>그룹 태그</Text>
-            <View style={styles.tagContainer}>
-              {selectedGroup.tags.map((tag, index) => (
-                <Text key={index} style={styles.tagItem}>
-                  {tag}
-                </Text>
-              ))}
-            </View>
-          </ScrollView>
+  <View style={styles.divider} />
+
+  <Text style={styles.categoryTitle}>그룹 태그</Text>
+  <View style={styles.tagContainer}>
+    {selectedGroup.tags.map((tag, index) => (
+      <Text key={index} style={styles.tagItem}>
+        {tag}
+      </Text>
+    ))}
+  </View>
+</ScrollView>
+
         </View>
       </View>
     </Modal>
@@ -79,45 +83,33 @@ const GroupListScreen = ({ route }) => {
   const [tagKeyword, setTagKeyword] = useState("");
   const [selectedEmotion, setSelectedEmotion] = useState("");
   const [serverGroups, setServerGroups] = useState([]);
+const handleJoinGroup = async (group) => {
+  if (!group.groupId) {
+    Alert.alert("알림", "그룹 ID가 유효하지 않습니다.");
+    return;
+  }
 
-  const defaultGroups = [
-    {
-      id: "1",
-      name: "🏃‍♂️🏃‍♀️러닝크루🏃‍♂️🏃‍♀️",
-      tags: ["#🏃‍♂️🏃‍♀️러닝크루", "#무기력"],
-      category: "운동",
-      description: "함께 러닝을 즐기는 모임입니다.",
-      days: 100,
-      image: require("../assets/running.jpg"),
-    },
-    {
-      id: "2",
-      name: "YTC 양천 테니스 클럽",
-      tags: ["#테니스", "#테니스클럽", "#기쁨"],
-      category: "운동",
-      description: "테니스를 즐기는 사람들의 모임",
-      days: 14,
-      image: require("../assets/tennis.jpg"),
-    },
-    {
-      id: "3",
-      name: "북 투게더📖",
-      tags: ["#북_투게더📖", "#독서모임", "#평온"],
-      category: "도서",
-      description: "책을 읽고 나누는 독서 모임입니다.",
-      days: 10,
-      image: require("../assets/book.jpg"),
-    },
-    {
-      id: "4",
-      name: "영화 소담회",
-      tags: ["#소담회", "#영화감상🍿🎥", "#감동"],
-      category: "영화",
-      description: "영화를 함께 보고 이야기 나누는 모임",
-      days: 365,
-      image: require("../assets/movie.jpg"),
-    },
-  ];
+  const userId = await AsyncStorage.getItem("userId"); // ✅ 유저 ID 가져오기
+  const result = await joinGroup(group.groupId, userId);
+
+if (result !== null) {
+  Alert.alert("성공", `${group.title || group.name}에 가입되었습니다!`);
+  loadGroups();
+} else {
+  Alert.alert("실패", "이미 가입된 그룹이거나 문제가 발생했습니다.");
+}
+
+};
+
+
+
+  const emotionMap = {
+    joy: "기쁨",
+    sadness: "슬픔",
+    anger: "분노",
+    calm: "평온",
+    anxiety: "불안",
+  };
 
   const emotionOptions = ["", "joy", "sadness", "anger", "calm", "anxiety"];
 
@@ -131,8 +123,11 @@ const GroupListScreen = ({ route }) => {
     const converted = data.map((group) => ({
       ...group,
       tags: group.tags ? group.tags.split(",") : [],
-      image: group.imageUrl ? { uri: group.imageUrl } : require("../assets/tokki.jpg"),
+      image: group.profileImageUrl
+        ? { uri: `${BASE_URL}${group.profileImageUrl}` }
+        : require("../assets/tokki.jpg"),
     }));
+
     setServerGroups(converted);
   };
 
@@ -143,32 +138,31 @@ const GroupListScreen = ({ route }) => {
   useFocusEffect(
     React.useCallback(() => {
       if (route.params?.newGroup) {
-        loadGroups();
+        const newGroup = route.params.newGroup;
+
+        const formattedGroup = {
+          ...newGroup,
+          tags: newGroup.tags ? newGroup.tags.split(",") : [],
+          image: newGroup.imageUrl
+            ? { uri: newGroup.imageUrl }
+            : require("../assets/tokki.jpg"),
+        };
+
+        setServerGroups([formattedGroup]);
+
         navigation.setParams({ newGroup: null });
       }
     }, [route.params?.newGroup])
   );
 
-  const allGroups = [...defaultGroups, ...serverGroups];
+const handleSearch = async () => {
+  console.log("🔍 검색 시작");
+  console.log("제목:", titleKeyword);
+  console.log("태그:", tagKeyword);
+  console.log("감정:", selectedEmotion);
+  await loadGroups();
+};
 
-  const handleJoinGroup = async (group) => {
-    if (group.groupId === undefined) {
-      Alert.alert("알림", "가입완료(임시)");
-      return;
-    }
-
-    const result = await joinGroup(group.groupId);
-    if (result !== null) {
-      Alert.alert("성공", `${group.title}에 가입되었습니다!`);
-      loadGroups();
-    } else {
-      Alert.alert("실패", "그룹 가입에 실패했습니다.");
-    }
-  };
-
-  const handleSearch = async () => {
-    await loadGroups();
-  };
 
   const handleOpenMenu = (group) => {
     setSelectedGroup(group);
@@ -227,8 +221,12 @@ const GroupListScreen = ({ route }) => {
       </View>
 
       <FlatList
-        data={allGroups}
-        keyExtractor={(item) => item.groupId?.toString() || item.id?.toString()}
+        data={serverGroups}
+        keyExtractor={(item, index) =>
+          item.groupId ? `groupId-${item.groupId}` :
+          item.id ? `id-${item.id}` :
+          `fallback-${index}`
+        }
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleOpenMenu(item)}>
             <View style={styles.card}>
@@ -236,11 +234,14 @@ const GroupListScreen = ({ route }) => {
                 <Text style={styles.groupName}>{item.title || item.name}</Text>
                 <Text style={styles.tags}>
                   그룹의 지향점은{"\n"}
-                  {item.tags.map((tag, index) => (
-                    <Text key={index} style={styles.tagText}>
-                      {tag} 
+                  {item.tags.map((tag) => (
+                    <Text key={tag} style={styles.tagText}>
+                      {tag}{" "}
                     </Text>
                   ))}
+                </Text>
+                <Text style={{ marginTop: 4, fontSize: 12, color: "gray" }}>
+                  감정 카테고리: {emotionMap[item.emotion] || "기타"}
                 </Text>
                 <TouchableOpacity
                   style={styles.joinButton}
@@ -258,7 +259,8 @@ const GroupListScreen = ({ route }) => {
       <FloatingMenu
         visible={menuVisible}
         setVisible={setMenuVisible}
-        selectedGroup={selectedGroup}
+      selectedGroup={selectedGroup}
+        emotionMap={emotionMap}
       />
 
       <TouchableOpacity
@@ -272,7 +274,6 @@ const GroupListScreen = ({ route }) => {
 };
 
 export default GroupListScreen;
-
 
 // ✅ 스타일 설정
 const styles = StyleSheet.create({

@@ -15,6 +15,8 @@ import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import * as ImageManipulator from "expo-image-manipulator";
+import { updateUserProfile } from "../api/userAPI";
 
 const BASE_URL = "http://124.50.249.203:8080";
 
@@ -25,107 +27,129 @@ export default function MemberProfileScreen() {
   const [points, setPoints] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
   const [imageUri, setImageUri] = useState(null);
+  const [userEmail, setUserEmail] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const id = await AsyncStorage.getItem("userId");
-      const token = await AsyncStorage.getItem("token");
-      if (!id || !token) return;
+    useEffect(() => {
+      const loadUser = async () => {
+        try {
+          const id = await AsyncStorage.getItem("userId");
+          const numericId = Number(id);
+          setUserId(numericId);
 
-      setUserId(id);
+          const token = await AsyncStorage.getItem("token");
+
+          const res = await axios.get(`${BASE_URL}/api/users/${numericId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          const user = res.data;
+          console.log("✅ 사용자 정보 수신:", user);
+
+          // ⬇️ 순서 지켜서 set
+          setUserEmail(user.email || "");
+          setBirthdate(user.birthdate || "");
+          setPhoneNumber(user.phoneNumber || "");
+          setName(user.username || "사용자");
+          setPoints(user.points || 0);
+
+          if (user.profileImageUrl) {
+            setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` });
+          } else {
+            setProfileImage(null);
+          }
+
+        } catch (error) {
+          console.error("❌ 프로필 불러오기 실패");
+          if (error.response) {
+            console.log("📛 응답 데이터:", error.response.data);
+            console.log("📛 상태 코드:", error.response.status);
+            console.log("📛 응답 헤더:", error.response.headers);
+          } else if (error.request) {
+            console.log("📡 요청 보냈지만 응답 없음:", error.request);
+          } else {
+            console.log("⚙️ 요청 구성 중 오류:", error.message);
+          }
+        }
+      };
+
+      loadUser();
+    }, []);
+
+
+  // ✅ 이미지 선택
+const pickImage = async () => {
+     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    alert("갤러리 접근 권한이 필요합니다.");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images, // 수정: MediaTypeOptions.Images
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1,
+  });
+
+  if (!result.canceled && result.assets.length > 0) {
+    const rawUri = result.assets[0].uri;
+
+    // ✅ 이미지 변환 (특정 Android 권한 이슈 방지)
+    const manipulated = await ImageManipulator.manipulateAsync(
+        rawUri,
+        [], // 편집 없음
+        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setImageUri(manipulated.uri);
+      setProfileImage({ uri: manipulated.uri });
+      console.log("✅ 변환된 이미지 URI:", manipulated.uri);
+    } else {
+      Alert.alert("선택 취소됨", "이미지를 선택하지 않았습니다.");
+    }
+  };
+
+    const handleSave = async () => {
+      if (!userId) return;
 
       try {
-        const res = await axios.get(`${BASE_URL}/api/users/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        console.log("📤 저장 시도:", { userId, name, imageUri });
+
+        // ✅ username만 전달
+        await updateUserProfile(userId, name, imageUri);
+
+        // ✅ 저장 후 사용자 정보 재로드
+        const token = await AsyncStorage.getItem("token");
+        const res = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const user = res.data;
+        setUserEmail(user.email || "");
+        setBirthdate(user.birthdate || "");
+        setPhoneNumber(user.phoneNumber || "");
         setName(user.username || "사용자");
         setPoints(user.points || 0);
-        // ↓ 변경된 부분: 상대경로로 내려오는 profileImageUrl을 절대 경로로 변환
+
         if (user.profileImageUrl) {
-          setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` }); // 변경
+          setProfileImage({ uri: `${BASE_URL}${user.profileImageUrl}` });
         } else {
           setProfileImage(null);
         }
+
+        Alert.alert("성공", "프로필이 업데이트되었습니다!");
       } catch (error) {
-        console.error("프로필 불러오기 실패:", error);
+        console.error("❌ 프로필 업데이트 실패:", error);
+        Alert.alert("실패", "프로필 업데이트에 실패했습니다.");
       }
     };
 
-    loadUser();
-  }, []);
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      alert("갤러리 접근 권한이 필요합니다.");
-      return;
-    }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
 
-    if (!result.canceled) {
-      const selectedImageUri = result.assets[0].uri;
-      setImageUri(selectedImageUri);
-      setProfileImage({ uri: selectedImageUri });
-    }
-  };
-
-  const handleSave = async () => {
-    console.log("✅ 저장 버튼 클릭됨");
-
-    if (!userId) return;
-    const token = await AsyncStorage.getItem("token");
-
-    try {
-     const formData = new FormData();
-    formData.append("username", name); // ✅ 이름 추가
-    if (imageUri) {
-      formData.append("profileImage", {
-      uri: imageUri,
-      type: "image/jpeg",
-      name: "profile.jpg"
-    });
-  }
-
-      console.log("📦 전송할 데이터:", formData);
-      const res = await axios.put(`${BASE_URL}/api/users/${userId}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-
-        },
-        transformRequest: (data, headers) => {
-        return data; // 이게 있어야 형식 깨짐 방지됨
-       },
-      });
-
-      if (res.status === 200) {
-        await AsyncStorage.setItem("username", name);
-        Alert.alert("성공", "프로필이 업데이트되었습니다!");
-
-        // 저장 후 최신 사용자 정보 다시 불러오기
-        const updatedRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const updatedUser = updatedRes.data;
-        setName(updatedUser.username || "사용자");
-        // ↓ 변경된 부분: 절대 경로로 이미지 다시 세팅
-        if (updatedUser.profileImageUrl) {
-          setProfileImage({ uri: `${BASE_URL}${updatedUser.profileImageUrl}` }); // 변경
-        }
-      }
-    } catch (err) {
-      console.error("❌ 프로필 업데이트 오류:", err.response?.data || err.message);
-      Alert.alert("실패", "프로필 업데이트에 실패했습니다.");
-    }
-  };
-
+  // ✅ 렌더링
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scrollContainer, { flexGrow: 1 }]}>

@@ -1,47 +1,53 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchMyGroups, fetchLeaveGroup } from "../api/groupAPI";
 import { Ionicons } from "@expo/vector-icons";
+import { fetchMyGroups, leaveGroup } from "../api/groupAPI";
+
+const BASE_URL = "http://124.50.249.203:8080";
 
 export default function MyGroupsScreen({ navigation }) {
-  const defaultGroups = [
-    {
-      id: "default1",
-      name: "기본 운동 그룹",
-      tags: ["#운동", "#기본"],
-      category: "운동",
-      description: "기본적으로 포함된 운동 그룹",
-      image: require("../assets/running.jpg"),
-    },
-    {
-      id: "default2",
-      name: "기본 독서 그룹",
-      tags: ["#독서", "#기본"],
-      category: "도서",
-      description: "기본적으로 포함된 독서 그룹",
-      image: require("../assets/book.jpg"),
-    },
-  ];
-
-  const [myGroups, setMyGroups] = useState(defaultGroups);
+  const [myGroups, setMyGroups] = useState([]);
 
   useEffect(() => {
-    const load = async () => {
+    const loadGroups = async () => {
       const userId = await AsyncStorage.getItem("userId");
-      if (userId) {
-        try {
-          const data = await fetchMyGroups(userId);
-          const filtered = data.filter(serverGroup => !defaultGroups.some(d => d.id === serverGroup.id));
-          setMyGroups([...defaultGroups, ...filtered]);
-        } catch (error) {
-          Alert.alert("그룹 목록을 불러오지 못했습니다.", error.message);
-        }
-      } else {
+      if (!userId) {
         Alert.alert("로그인 상태가 아닙니다.");
+        return;
+      }
+
+      try {
+        const data = await fetchMyGroups(userId);
+
+        const formatted = data.map((group) => ({
+          ...group,
+          id: group.groupId ?? group.id,
+          name: group.title ?? group.name,
+          tags:
+            typeof group.tags === "string"
+              ? group.tags.split(",")
+              : group.tags ?? [],
+          image: group.profileImageUrl
+            ? `${BASE_URL}${group.profileImageUrl}`
+            : null,
+        }));
+
+        setMyGroups(formatted);
+      } catch (error) {
+        Alert.alert("그룹 목록을 불러오지 못했습니다.", error.message);
       }
     };
-    load();
+
+    loadGroups();
   }, []);
 
   const handleGroupClick = (group) => {
@@ -49,14 +55,6 @@ export default function MyGroupsScreen({ navigation }) {
   };
 
   const handleLeaveGroup = async (groupId) => {
-    const isDefault = groupId.toString().startsWith("default");
-
-    if (isDefault) {
-      setMyGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
-      Alert.alert("탈퇴 완료", "기본 그룹에서 나갔습니다. (예시..)");
-      return;
-    }
-
     const userId = await AsyncStorage.getItem("userId");
     if (!userId) {
       Alert.alert("오류", "로그인 상태가 아닙니다.");
@@ -64,15 +62,15 @@ export default function MyGroupsScreen({ navigation }) {
     }
 
     try {
-      const result = await fetchLeaveGroup(userId, groupId);
-      if (result) {
+      const result = await leaveGroup(groupId, userId);
+      if (result !== null && result !== undefined) {
         Alert.alert("탈퇴 성공", "그룹에서 탈퇴되었습니다.");
-        setMyGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+        setMyGroups((prev) => prev.filter((group) => group.id !== groupId));
       } else {
         Alert.alert("탈퇴 실패", "그룹 탈퇴에 실패했습니다.");
       }
     } catch (error) {
-      Alert.alert("탈퇴 실패", "서버에서 그룹을 탈퇴하는 데 문제가 발생했습니다.");
+      Alert.alert("탈퇴 실패", "서버 오류로 그룹 탈퇴에 실패했습니다.");
     }
   };
 
@@ -91,7 +89,9 @@ export default function MyGroupsScreen({ navigation }) {
         />
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.tags}>{item.tags.join(" ")}</Text>
+          <Text style={styles.tags}>
+            {Array.isArray(item.tags) ? item.tags.join(" ") : ""}
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -117,9 +117,13 @@ export default function MyGroupsScreen({ navigation }) {
       <Text style={styles.header}>🎉 가입한 그룹 목록</Text>
       <FlatList
         data={myGroups}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) =>
+          item?.id ? item.id.toString() : `fallback-${index}`
+        }
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.noGroupsText}>가입한 그룹이 없습니다.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.noGroupsText}>가입한 그룹이 없습니다.</Text>
+        }
       />
     </View>
   );
@@ -136,6 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 10,
     marginBottom: 10,
+    paddingTop:20,
   },
   navTitle: {
     fontSize: 18,

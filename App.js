@@ -123,6 +123,7 @@ export default function App() {
         <Stack.Screen name="RecommendationScreen" component={RecommendationScreen} />
         <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
         <Stack.Screen name="GroupFeed" component={GroupFeedScreen} /> 
+        <Stack.Screen name="GroupChat" component={GroupChatScreen} /> 
       </Stack.Navigator>
     </NavigationContainer>
   );

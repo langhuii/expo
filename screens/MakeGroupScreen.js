@@ -27,17 +27,18 @@ const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
                 <View style={styles.divider} />
                 <View style={styles.tagContainer}>
                   {category.items.map((item, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={styles.tagButton}
-                      onPress={() => {
-                        setSelectedCategory(item);
-                        setVisible(false);
-                      }}
-                    >
-                      <Text style={styles.tagText}>{item}</Text>
-                    </TouchableOpacity>
-                  ))}
+  <TouchableOpacity
+    key={`${category.title}-${item}`} // ✅ 중복 없는 고유 key
+    style={styles.tagButton}
+    onPress={() => {
+      setSelectedCategory(item);
+      setVisible(false);
+    }}
+  >
+    <Text style={styles.tagText}>{item}</Text>
+  </TouchableOpacity>
+))}
+
                 </View>
               </View>
             ))}
@@ -127,10 +128,11 @@ export default function MakeGroupScreen({ navigation }) {
     const createdGroup = await createGroup(groupData);
     console.log("🚀 서버 응답:", createdGroup);
 
-    if (createdGroup) {
-      Alert.alert("성공", "그룹이 생성되었습니다!");
-      navigation.navigate("GroupListScreen", { newGroup: createdGroup });
-    } else {
+   if (createdGroup) {
+  Alert.alert("성공", "그룹이 생성되었습니다!");
+  navigation.replace("GroupListScreen", { newGroup: createdGroup });
+    }
+   else {
       Alert.alert("실패", "그룹 생성에 실패했습니다.");
     }
   };

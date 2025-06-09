@@ -1,75 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function GroupChatScreen({ route }) {
-  const { roomId = 'room1', username = 'Me' } = route.params || {}; // 채팅방 ID 및 사용자 이름
-  const [messages, setMessages] = useState([]);
+const GroupChatScreen = () => {
+  const [messages, setMessages] = useState([
+    { id: '1', user: 'Brian', time: '10:00 AM', text: '안녕하세요!' },
+    { id: '2', user: 'Me', time: '10:01 AM', text: '안녕하세요, 반가워요!' },
+  ]);
   const [text, setText] = useState('');
-  const socketRef = useRef(null);
 
-  // WebSocket 연결 설정
-  useEffect(() => {
-    const socketUrl = `http://124.50.249.203:8080/ws/chat/${roomId}?name=${username}`;
-    socketRef.current = new WebSocket(socketUrl);
-
-    socketRef.current.onopen = () => {
-      console.log('✅ WebSocket 연결됨');
-    };
-
-    socketRef.current.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        setMessages((prevMessages) => [message, ...prevMessages]);
-      } catch (error) {
-        console.error('❌ 메시지 파싱 실패:', error);
-      }
-    };
-
-    socketRef.current.onerror = (error) => {
-      console.error('❌ WebSocket 오류:', error.message);
-    };
-
-    socketRef.current.onclose = () => {
-      console.log('🔌 WebSocket 연결 종료됨');
-    };
-
-    return () => {
-      socketRef.current.close();
-    };
-  }, [roomId, username]);
-
-  // 메시지 전송
   const handleSend = () => {
     if (text.trim() === '') return;
-
-    const chatMessage = {
-      user: username,
-      text: text.trim(),
+    const newMessage = {
+      id: Date.now().toString(),
+      user: 'Me',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      readUsers: []
+      text: text.trim(),
     };
-
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(chatMessage));
-      setText('');
-    } else {
-      console.warn('⚠️ WebSocket이 연결되어 있지 않습니다.');
-    }
+    setMessages([newMessage, ...messages]);
+    setText('');
   };
 
-  // 메시지 렌더링
   const renderMessage = ({ item }) => {
-    const isMe = item.user === username;
+    const isMe = item.user === 'Me';
     return (
       <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.user}>{item.user}</Text>
@@ -80,8 +33,8 @@ export default function GroupChatScreen({ route }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* 헤더 */}
+    <View style={styles.container}>
+      {/* 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.headerText}>그룹 채팅</Text>
       </View>
@@ -90,7 +43,7 @@ export default function GroupChatScreen({ route }) {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id}
         style={styles.chatList}
         inverted
       />
@@ -107,9 +60,9 @@ export default function GroupChatScreen({ route }) {
           <Icon name="send" size={24} color="#FFA500" />
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -126,3 +79,4 @@ const styles = StyleSheet.create({
   input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 10, marginRight: 10, height: 40 },
 });
 
+export default GroupChatScreen;
