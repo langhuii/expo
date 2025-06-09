@@ -171,6 +171,7 @@ const GroupListScreen = ({ route }) => {
     setServerGroups(converted);
   };
 
+
   useEffect(() => {
     loadGroups();
   }, []);
@@ -183,13 +184,15 @@ const GroupListScreen = ({ route }) => {
         const formattedGroup = {
           ...newGroup,
           tags: newGroup.tags ? newGroup.tags.split(",") : [],
-          image: newGroup.imageUrl
-            ? { uri: newGroup.imageUrl }
+          image: newGroup.profileImageUrl
+            ? { uri: `${BASE_URL}${newGroup.profileImageUrl}` }
             : require("../assets/tokki.jpg"),
         };
 
-        setServerGroups([formattedGroup]);
+        // 기존 목록에 추가
+        setServerGroups((prev) => [formattedGroup, ...prev]);
 
+        // 다시 들어올 때 중복 방지
         navigation.setParams({ newGroup: null });
       }
     }, [route.params?.newGroup])
@@ -246,9 +249,9 @@ const GroupListScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.navBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back-outline" size={24} color="black" />
-        </TouchableOpacity>
+       <TouchableOpacity onPress={() => navigation.navigate("MemberProfile")}>
+        <Ionicons name="chevron-back-outline" size={24} color="black" />
+      </TouchableOpacity>
         <Text style={styles.navTitle}>전체그룹</Text>
         <View style={{ width: 30 }} />
       </View>

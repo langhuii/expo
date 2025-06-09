@@ -98,10 +98,11 @@ export default function HomeScreen({ navigation }) {
   const chartData = emotionStats
     ? {
         labels: Object.keys(emotionStats),
-        datasets: [{ data: Object.values(emotionStats) }]
+        datasets: [{ data: Object.values(emotionStats).map(v => v * 100) }]
+        
       }
     : {
-        labels: ['joy', 'sadness', 'anger', 'calm', 'anxiety'],
+        labels: ['😀', '😭', '😡', '😑', '😫'],
         datasets: [{ data: [0, 0, 0, 0, 0] }]
       };
 
@@ -160,7 +161,7 @@ export default function HomeScreen({ navigation }) {
               }
             }}
             style={{ marginVertical: 8, borderRadius: 16 }}
-            yAxisSuffix="회"
+            yAxisSuffix="%"
             verticalLabelRotation={30}
           />
         </>

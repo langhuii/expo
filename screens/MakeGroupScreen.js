@@ -9,6 +9,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 
 
+
 const FloatingMenu = ({ visible, setVisible, setSelectedCategory }) => {
   const categories = [
     { title: "감정", items: ["기쁨", "슬픔", "화남", "평온", "짜증"] },
@@ -77,19 +78,16 @@ const pickImage = async () => {
   if (!result.canceled && result.assets.length > 0) {
     const rawUri = result.assets[0].uri;
 
-    // ✅ 이미지 변환 (특정 Android 권한 이슈 방지)
     const manipulated = await ImageManipulator.manipulateAsync(
-        rawUri,
-        [], // 편집 없음
-        { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-      );
+      rawUri,
+      [],
+      { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
+    );
 
-      setImageUri(manipulated.uri);
-      setProfileImage({ uri: manipulated.uri });
-      console.log("✅ 변환된 이미지 URI:", manipulated.uri);
-    } else {
-      Alert.alert("선택 취소됨", "이미지를 선택하지 않았습니다.");
-    }
+    setGroupImage(manipulated.uri); // ✅ 이것만 쓰세요
+    console.log("✅ 변환된 그룹 이미지 URI:", manipulated.uri);
+  }
+
   };
 
   const addTag = () => {
@@ -139,13 +137,12 @@ const pickImage = async () => {
     const createdGroup = await createGroup(groupData);
     console.log("🚀 서버 응답:", createdGroup);
 
-   if (createdGroup) {
-  Alert.alert("성공", "그룹이 생성되었습니다!");
-  navigation.replace("GroupListScreen", { newGroup: createdGroup });
-    }
-   else {
-      Alert.alert("실패", "그룹 생성에 실패했습니다.");
-    }
+      if (createdGroup) {
+        Alert.alert("성공", "그룹이 생성되었습니다!");
+        navigation.navigate("Group");
+      } else {
+        Alert.alert("실패", "그룹 생성에 실패했습니다.");
+      }
   };
 
   return (
