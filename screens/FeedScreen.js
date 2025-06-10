@@ -1,336 +1,242 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, Dimensions, Modal, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, Image, TouchableOpacity, FlatList,
+  ScrollView, TextInput, Alert, Modal
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { StyleSheet } from 'react-native';
-
-const styles = StyleSheet.create({
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  menuContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  menuItem: {
-    paddingVertical: 10,
-  },
-  menuText: {
-    fontSize: 16,
-  },
-});
-
-const { width, height } = Dimensions.get('window');
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { fetchPosts, likePost } from '../api/postAPI';
+import { fetchStories, uploadImage, uploadStory } from '../api/storyAPI'; // 🟣 스토리 관련 API 추가
 
 const FeedScreen = () => {
   const navigation = useNavigation();
+
+  // ✅ 임시 게시글 데이터
   const [posts, setPosts] = useState([
-    { id: '1', user: 'Brian K', date: '2024.12.19', likes: 2400, comments: 0, image: require('../assets/post1.jpg'), profile: require('../assets/profile1.jpg'), liked: false },
-    { id: '2', user: 'Felix', date: '2024.12.19', likes: 1800, comments: 0, image: require('../assets/post2.jpg'), profile: require('../assets/profile2.jpg'), liked: false },
+    {
+      id: '1',
+      user: 'Brian K',
+      date: '2024.12.19',
+      likes: 2400,
+      comments: 0,
+      image: require('../assets/post1.jpg'),
+      profile: require('../assets/profile1.jpg'),
+    },
+    {
+      id: '2',
+      user: 'Felix',
+      date: '2024.12.19',
+      likes: 1800,
+      comments: 0,
+      image: require('../assets/post2.jpg'),
+      profile: require('../assets/profile2.jpg'),
+    },
   ]);
-  const [stories, setStories] = useState([]);
-  const [selectedStoryIndex, setSelectedStoryIndex] = useState(null);
+
+  const [stories, setStories] = useState([]); // 🟣 추가
+  const [selectedStory, setSelectedStory] = useState(null); // 🟣 추가
   const [selectedPostId, setSelectedPostId] = useState(null);
-  const [commentText, setCommentText] = useState("");
+  const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  /*댓글삭제*/
-  const handleDeleteComment = (index) => {
-    setComments(prevComments => ({
-      ...prevComments,
-      [selectedPostId]: prevComments[selectedPostId].filter((_, i) => i !== index) // 클릭한 댓글만 제외
-    }));
-  };
-  
- // ✅ 프로필 박스를 클릭하면 메뉴가 뜨도록 설정
- const handleProfilePress = (user) => {
-  setSelectedUser(user);  // 선택한 사용자 정보 저장
-  setMenuVisible(true);  // 메뉴 열기
-};
+  useEffect(() => {
+    // loadPosts(); // ✅ 실제 게시글 API 호출은 현재 비활성화 (임시 게시글만 사용)
+    loadStories(); // 🟣 스토리 불러오기
+  }, []);
 
-// ✅ 모달 닫기 함수
-const handleCloseMenu = () => {
-  setMenuVisible(false);
-  setSelectedUser(null);
-};
-
-  /** 📌 16:9 비율로 사진 촬영하여 스토리 추가 */
-  const handleAddStory = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('카메라 접근 권한이 필요합니다.');
-      return;
-    }
-
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [9, 16],  // 🔥 16:9 비율 적용
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets) {
-      setStories([...stories, result.assets[0].uri]);
+  const loadPosts = async () => {
+    try {
+      console.log('📥 게시글 로딩 시작');
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('로그인이 필요합니다.');
+      const data = await fetchPosts(token);
+      console.log('✅ 게시글 로딩 완료:', data); // 이거 찍어보기
+      setPosts(data);
+    } catch (error) {
+      console.error('게시글 불러오기 실패:', error.response?.data || error.message || error);
     }
   };
 
-  /** 📌 스토리를 선택하면 전체 화면 모달 띄움 */
-  const handleSelectStory = () => {
-    setSelectedStoryIndex(0);
-  };
-
-  /** 🔙 이전 버튼: 전체 화면 스토리 닫기 */
-  const handleCloseStoryModal = () => {
-    setSelectedStoryIndex(null);
-  };
-
-  const handleNextStory = () => {
-    if (selectedStoryIndex < stories.length - 1) {
-      setSelectedStoryIndex(selectedStoryIndex + 1);
-    } else {
-      setSelectedStoryIndex(null);
+  const loadStories = async () => {
+    try {
+      console.log('📥 스토리 로딩 시작');
+      const data = await fetchStories();
+      setStories(data);
+    } catch (error) {
+      console.error('스토리 불러오기 실패:', error.response?.data || error.message || error);
     }
   };
 
-  const handlePrevStory = () => {
-    if (selectedStoryIndex > 0) {
-      setSelectedStoryIndex(selectedStoryIndex - 1);
+  const handleLike = async (postId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('로그인이 필요합니다.');
+      await likePost(postId, token);
+      // loadPosts(); // ✅ 좋아요 후 새로고침 비활성화 (임시 게시글이므로)
+    } catch (error) {
+      console.error('좋아요 실패:', error);
     }
   };
 
-  const handleDeleteStory = () => {
-    if (selectedStoryIndex !== null) {
-      const updatedStories = stories.filter((_, index) => index !== selectedStoryIndex);
-      setStories(updatedStories);
-      setSelectedStoryIndex(null);
-    }
-  };
-
-  /** 📌 좋아요 (하트) 기능 */
-  const handleLike = (postId) => {
-    setPosts(posts.map(post =>
-      post.id === postId
-        ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
-  };
-
-  /** 📌 댓글 기능 */
-  const handleCommentPress = (postId) => {
-    setSelectedPostId(postId);
-  };
-
-  const handleCloseCommentModal = () => {
-    setSelectedPostId(null);
+  const handleProfilePress = (user) => {
+    setSelectedUser(user);
+    setMenuVisible(true);
   };
 
   const handleAddComment = () => {
-    if (commentText.trim() !== "") {
+    if (commentText.trim() !== '') {
       setComments({
         ...comments,
-        [selectedPostId]: [...(comments[selectedPostId] || []), commentText]
+        [selectedPostId]: [...(comments[selectedPostId] || []), commentText],
       });
-      setCommentText("");
+      setCommentText('');
+    }
+  };
+
+  const handleDeleteComment = (index) => {
+    setComments((prev) => ({
+      ...prev,
+      [selectedPostId]: prev[selectedPostId].filter((_, i) => i !== index),
+    }));
+  };
+
+  const openCameraForStory = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('카메라 권한이 필요합니다.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) throw new Error('로그인이 필요합니다.');
+
+        const imageUri = result.assets?.[0]?.uri || result.uri;
+        const imageUrl = await uploadImage(imageUri);
+        console.log('✅ imageUrl:', imageUrl);
+
+        await uploadStory(imageUrl);
+        Alert.alert('스토리 업로드 완료');
+
+        loadStories(); // 🟣 업로드 후 스토리 다시 불러오기
+      } catch (error) {
+        console.error('스토리 업로드 실패:', error.response?.data || error.message || error);
+        Alert.alert('스토리 업로드에 실패했습니다.');
+      }
     }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FAE3B4' }}>
-      <View style={{ backgroundColor: '#FFD59E', padding: 15, alignItems: 'center' }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>SNS</Text>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 10, height:78 }}>
-        <TouchableOpacity onPress={handleAddStory} style={{ marginRight: 10}}>
-          <Icon name="add-circle" size={50} color="#FFA500" />
+      <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', padding: 10 }}>피드</Text>
+
+      {/* 🟣 스토리 바 */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ padding: 10, height: 78 }}>
+        <TouchableOpacity onPress={openCameraForStory} style={{ marginRight: 10 }}>
+          <View
+            style={{
+              width: 60,
+              height: 55,
+              borderRadius: 30,
+              borderWidth: 2,
+              borderColor: '#FFA500',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Icon name="camera-outline" size={30} color="#FFA500" />
+          </View>
         </TouchableOpacity>
-        {stories.length > 0 && (
-          <TouchableOpacity onPress={handleSelectStory}>
-            <Image source={{ uri: stories[stories.length - 1] }} style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }} />
+
+        {stories.map((story, index) => (
+          <TouchableOpacity key={index} onPress={() => setSelectedStory(story)}>
+            <Image
+              source={{ uri: story.imageUrl }}
+              style={{ width: 60, height: 55, borderRadius: 30, marginHorizontal: 5 }}
+              onError={() => console.log('🛑 이미지 로딩 실패:', story.imageUrl)}
+            />
           </TouchableOpacity>
-        )}
+        ))}
       </ScrollView>
 
+      {/* 🟣 스토리 전체보기 모달 */}
+      {selectedStory && (
+        <Modal visible transparent>
+          <View style={{ flex: 1, backgroundColor: '#000000cc', justifyContent: 'center', alignItems: 'center' }}>
+            <Image
+              source={{ uri: selectedStory.imageUrl }}
+              style={{ width: '90%', height: '70%' }}
+              resizeMode="contain"
+            />
+            <TouchableOpacity onPress={() => setSelectedStory(null)} style={{ marginTop: 20 }}>
+              <Text style={{ color: 'white', fontSize: 18 }}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
+
+      {/* 게시글 목록 */}
       <FlatList
-  data={posts}
-  keyExtractor={item => item.id}
-  renderItem={({ item }) => (
-    <View style={{ margin: 20, padding: 15, backgroundColor: '#FFF8DC', minHeight: 300, borderRadius: 10 }}>
-      
-      <View style={{ position: 'relative' }}>
-        
-        <TouchableOpacity
-          onPress={() => handleProfilePress(item)}
-          style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: 'rgba(255, 223, 186, 0.9)',
-            borderRadius: 20,
-            paddingVertical: 5,
-            paddingHorizontal: 10,
-            alignSelf: 'flex-start'
-          }}
-        >
-          <Image source={item.profile} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
-          <View>
-            <Text style={{ fontWeight: 'bold', fontSize: 14 }}>{item.user}</Text>
-            <Text style={{ color: 'gray', fontSize: 12 }}>{item.date}</Text>
-          </View>
-        </TouchableOpacity>
+        data={posts}
+        keyExtractor={(item) => item.id?.toString() || `${Math.random()}`}
+        renderItem={({ item }) => (
+          <View style={{ margin: 20, padding: 15, backgroundColor: '#FFF8DC', borderRadius: 10 }}>
+            <TouchableOpacity onPress={() => handleProfilePress(item)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image source={item.profile} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
+              <View>
+                <Text>{item.user || '알 수 없음'}</Text>
+                <Text style={{ fontSize: 12, color: 'gray' }}>{item.date || ''}</Text>
+              </View>
+            </TouchableOpacity>
 
-        <Image 
-  source={item.image} 
-          style={{ width: '100%', height: 1000, borderRadius: 10, marginTop: 10 }} 
-/>
+            <Image source={item.image} style={{ width: '100%', height: 250, borderRadius: 10, marginTop: 10 }} />
 
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
-          <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
-            <Icon name={item.liked ? "heart" : "heart-outline"} size={24} color="red" />
-            <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => handleCommentPress(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="chatbubble-outline" size={24} color="black" />
-            <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || item.comments}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <Modal visible={menuVisible} transparent={true} animationType="fade" onRequestClose={handleCloseMenu}>
-        <TouchableOpacity style={styles.modalBackground} onPress={handleCloseMenu}>
-          <View style={styles.menuContainer}>
-            {selectedUser && (
-              <>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>{selectedUser.user}</Text>
-                <TouchableOpacity style={styles.menuItem} onPress={() => alert(`${selectedUser.user}님의 프로필 보기`)}>
-                  <Text style={styles.menuText}>사용자 프로필 보기</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => alert(`${selectedUser.user}님에게 쪽지 보내기`)}>
-                  <Text style={styles.menuText}>쪽지 보내기</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-    </View> // ✅ View 태그 닫는 위치 수정
-  )}
-/>
-
-      <Modal visible={selectedStoryIndex !== null} transparent={true} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
-          {selectedStoryIndex !== null && (
-           <>
-              <Image source={{ uri: stories[selectedStoryIndex] }} style={{ width: width, height: width * 9 / 16 }} resizeMode="contain" />
-
-              <TouchableOpacity onPress={handleCloseStoryModal} style={{ position: 'absolute', top: 40, right: 20 }}>
-                <Icon name="close" size={35} color="white" />
+            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+              <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+                <Icon name={'heart-outline'} size={24} color="red" />
+                <Text style={{ marginLeft: 5 }}>{item.likes}</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity onPress={handleDeleteStory} style={{ position: 'absolute', bottom: 100, right: 20 }}>
-                <Icon name="trash" size={35} color="red" />
+              <TouchableOpacity onPress={() => setSelectedPostId(item.id)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon name="chatbubble-outline" size={24} color="black" />
+                <Text style={{ marginLeft: 5 }}>{comments[item.id]?.length || 0}</Text>
               </TouchableOpacity>
-
-              {selectedStoryIndex > 0 && (
-                <TouchableOpacity onPress={handlePrevStory} style={{ position: 'absolute', left: 20 }}>
-                  <Icon name="chevron-back" size={40} color="white" />
-                </TouchableOpacity>
-              )}
-
-              {selectedStoryIndex < stories.length - 1 && (
-                <TouchableOpacity onPress={handleNextStory} style={{ position: 'absolute', right: 20 }}>
-                  <Icon name="chevron-forward" size={40} color="white" />
-                </TouchableOpacity>
-              )}
-            </>
-          )}
-        </View>
-      </Modal>
-
-      <TouchableOpacity
-  onPress={() => navigation.navigate('WriteScreen')} // 글 작성 화면으로 이동
-  style={{
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#FFA500',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-    zIndex: 10, // ✅ 다른 요소 위에 배치
-  }}
->
-  <Icon name="add" size={30} color="white" />
-</TouchableOpacity>
-
-<Modal visible={selectedPostId !== null} transparent={true} animationType="slide">
-  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-    <View style={{backgroundColor: 'white', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.5 }}>
-    <View style={{ maxHeight: height * 0.4, marginTop: 10 }}>
-
-  <TouchableOpacity onPress={handleCloseCommentModal} style={{borderWidth:1, borderRadius: 20, position: 'absolute', top: -26, right: -10, zIndex: 2}}
-       >
-       <Icon name="close" size={20} color="black" />
-      </TouchableOpacity>
-  
-  <FlatList
-    data={comments[selectedPostId] || []}
-    keyExtractor={(item, index) => index.toString()}
-    renderItem={({ item, index }) => (
-      <View style={{ 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: 10, 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#eee' 
-      }}>
-
-        <Text>{item}</Text>
-
-
-        <TouchableOpacity onPress={() => handleDeleteComment(index)}>
-          <Icon name="trash" size={20} color="red" />
-        </TouchableOpacity>
-      </View>
-    )}
-  />
-</View>
-
-      <TextInput
-        value={commentText}
-        onChangeText={setCommentText}
-        placeholder="댓글을 입력하세요..."
-        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 10, marginBottom: 10 }}
+            </View>
+          </View>
+        )}
       />
 
-      <TouchableOpacity onPress={handleAddComment} style={{ alignSelf: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: 7, borderRadius: 10, marginLeft: 600, width:90 }}>
-        <Text style={{ alignSelf: 'center', color: 'white', fontWeight: 'bold' }}>댓글 추가</Text>
+      {/* 글쓰기 버튼 */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('WriteScreen')}
+        style={{
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          backgroundColor: '#FFA500',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 5,
+          elevation: 5,
+          zIndex: 10,
+        }}
+      >
+        <Icon name="add" size={30} color="white" />
       </TouchableOpacity>
-
-    </View>
-  </View>
-</Modal>
-
     </View>
   );
 };

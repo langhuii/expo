@@ -1,40 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import styled from "styled-components/native";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loginUser } from "../api/loginAPI";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("입력 오류", "이메일과 비밀번호를 모두 입력해주세요.");
-      return;
-    }
-
-    try {
-      const response = await axios.post("http://124.50.249.203:8080/api/auth/login", {
-        email,
-        password,
-      });
-
-      const { token, username } = response.data; // ✅ 여기에서 구조분해
-
-      // ✅ 로그인 정보 저장
-      await AsyncStorage.setItem("token", token);
-      await AsyncStorage.setItem("username", username);
-
-      // ✅ 메인 화면 이동
+  const handleLogin = () => {
+    loginUser(email, password, () => {
       navigation.replace("Main");
-    } catch (error) {
-      console.error("❌ 로그인 실패:", error.response?.data || error.message);
-      Alert.alert(
-        "로그인 실패",
-        error.response?.data?.message || "이메일 또는 비밀번호가 올바르지 않습니다."
-      );
-    }
+    });
   };
 
   return (
@@ -42,7 +18,7 @@ const LoginScreen = ({ navigation }) => {
       <Logo source={{ uri: "https://your-image-url.com/logo.png" }} />
       <InputContainer>
         <Label>Email</Label>
-        <Input 
+        <Input
           placeholder="Enter your email"
           value={email}
           onChangeText={setEmail}
@@ -50,7 +26,7 @@ const LoginScreen = ({ navigation }) => {
           autoCapitalize="none"
         />
         <Label>Password</Label>
-        <Input 
+        <Input
           placeholder="Enter your password"
           value={password}
           onChangeText={setPassword}
@@ -70,7 +46,6 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-// Styled Components
 const Container = styled.View`
   flex: 1;
   background-color: #f9f3e7;

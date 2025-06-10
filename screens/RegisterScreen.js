@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import styled from "styled-components/native";
-import axios from "axios";
+import { sendVerificationCode, verifyEmailCode, registerUser } from "../api/registerAPI";
 
 const RegisterScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -9,41 +9,24 @@ const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
-  const handleRegister = async () => {
-  if (!username || !birthdate || !email || !password || !phoneNumber) {
-    Alert.alert("입력 오류", "모든 정보를 입력하세요.");
-    return;
-  }
+  const handleSendCode = () => sendVerificationCode(email);
 
-  try {
-    const response = await axios.post("http://124.50.249.203:8080/api/users/signup", {
-      username,
-      birthdate,
-      email,
-      password,
-      phoneNumber, // ✅ 백엔드 DTO에 맞춘 필드명
-    });
+  const handleVerifyCode = () =>
+    verifyEmailCode(email, verificationCode, () => setIsVerified(true));
 
-    if (response.status === 201) {
-      Alert.alert("회원가입 성공", "로그인 화면으로 이동합니다.");
+  const handleRegister = () => {
+    if (!isVerified) {
+      Alert.alert("인증 필요", "이메일 인증을 먼저 완료하세요.");
+      return;
+    }
+
+    registerUser({ username, birthdate, email, password, phoneNumber }, () => {
       navigation.navigate("Login");
-    } else {
-      Alert.alert("회원가입 실패", "다시 시도해주세요.");
-    }
-
-  } catch (error) {
-    console.error("❌ 회원가입 오류:", error);
-    if (error.response) {
-      console.warn("📛 응답 상태코드:", error.response.status);
-      console.warn("📛 응답 내용:", error.response.data);
-      Alert.alert("회원가입 실패", error.response.data.message || "서버 오류가 발생했습니다.");
-    } else {
-      Alert.alert("네트워크 오류", "서버와 연결할 수 없습니다.");
-    }
-  }
-};
-
+    });
+  };
 
   return (
     <Container>
@@ -56,44 +39,29 @@ const RegisterScreen = ({ navigation }) => {
 
       <FormContainer>
         <Label>Name</Label>
-        <Input 
-          placeholder="Enter your name"
-          value={username}
-          onChangeText={setUsername}
-        />
+        <Input placeholder="Enter your name" value={username} onChangeText={setUsername} />
 
-        <Label>Date of birth ex)2000.01.01</Label>
-        <Input 
-          placeholder="YYYY.MM.DD"
-          value={birthdate}
-          onChangeText={setBirthdate}
-          keyboardType="numeric"
-        />
+        <Label>Date of birth (ex:2000-01-01)</Label>
+        <Input placeholder="YYYY-MM-DD" value={birthdate} onChangeText={setBirthdate} />
 
         <Label>Email</Label>
-        <Input 
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <Input placeholder="Enter your email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+
+        <TouchableOpacity onPress={handleSendCode} style={{ backgroundColor: '#f4c76d', padding: 10, borderRadius: 5, marginBottom: 10 }}>
+          <Text style={{ textAlign: 'center', color: '#333' }}>인증 코드 보내기</Text>
+        </TouchableOpacity>
+
+        <Input placeholder="인증 코드 입력" value={verificationCode} onChangeText={setVerificationCode} keyboardType="numeric" />
+
+        <TouchableOpacity onPress={handleVerifyCode} style={{ backgroundColor: '#8ecae6', padding: 10, borderRadius: 5, marginBottom: 10 }}>
+          <Text style={{ textAlign: 'center', color: '#fff' }}>인증 확인</Text>
+        </TouchableOpacity>
 
         <Label>Password</Label>
-        <Input 
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <Input placeholder="Enter your password" value={password} onChangeText={setPassword} secureTextEntry />
 
         <Label>Phone Number</Label>
-        <Input 
-          placeholder="Enter your phone number"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
-        />
+        <Input placeholder="Enter your phone number" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
 
         <Button onPress={handleRegister}>
           <ButtonText>Sign Up</ButtonText>

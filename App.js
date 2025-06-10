@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text,Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-
 
 // 📌 화면 컴포넌트 불러오기
 import HomeScreen from "./screens/HomeScreen";
@@ -24,15 +23,14 @@ import RecommendationScreen from "./screens/RecommendationScreen";
 import MyGroupsScreen from "./screens/MyGroupsScreen";
 import GroupFeedScreen from "./screens/GroupFeedScreen"; 
 import GroupChatScreen from "./screens/GroupChatScreen"; 
-
-
+import StoryScreen from "./screens/StoryScreen"; // ✅ 추가된 스크린
 
 SplashScreen.preventAutoHideAsync(); // 스플래시 화면 유지
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ✅ **하단 탭 네비게이션**
+// ✅ 하단 탭 네비게이션
 function MainTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
@@ -76,7 +74,7 @@ export default function App() {
       try {
         console.log("스플래시 화면 준비 중...");
 
-        // 📌 폰트 로드 (로컬 폰트 추가)
+        // 📌 폰트 로드
         await Font.loadAsync({
           "BagelFatOne-Regular": require("./assets/fonts/BagelFatOne-Regular.ttf"),
         });
@@ -97,12 +95,7 @@ export default function App() {
   if (!isReady) {
     return (
       <View style={styles.splashContainer}>
-        {/* 🌟 스플래시 이미지 */}
-        <Image 
-          source={require("./assets/test.png")} 
-        />
-        
-        {/* 🌟 기존 텍스트 */}
+        <Image source={require("./assets/test.png")} />
         <Text style={styles.text}>스플래시 화면</Text>
       </View>
     );
@@ -111,7 +104,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
@@ -122,13 +115,15 @@ export default function App() {
         <Stack.Screen name="MakeGroup" component={MakeGroupScreen} options={{ title: "그룹 만들기" }} />
         <Stack.Screen name="RecommendationScreen" component={RecommendationScreen} />
         <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
-        <Stack.Screen name="GroupFeed" component={GroupFeedScreen} /> 
-        <Stack.Screen name="GroupChat" component={GroupChatScreen} /> 
+        <Stack.Screen name="GroupFeed" component={GroupFeedScreen} />
+        <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="MemberProfile" component={MemberProfileScreen} />
+        <Stack.Screen name="StoryScreen" component={StoryScreen} /> {/* ✅ 추가된 스크린 */}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
 // ✅ 스타일 설정
 const styles = StyleSheet.create({
   splashContainer: {
@@ -139,6 +134,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 20,
-    fontFamily: "BagelFatOne-Regular", // 📌 일관된 글씨체 적용
+    fontFamily: "BagelFatOne-Regular",
   },
 });
