@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://124.50.249.203:8080"; //백 주소
+const BASE_URL = "http://172.16.105.189:8080"; //백 주소
 
 // 감정 분석 요청
 export const analyzeEmotion = async (text) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  Image, Alert
+  Image, Alert, ScrollView, KeyboardAvoidingView, Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -23,13 +23,18 @@ const WriteScreen = () => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.IMAGE],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
+      allowsEditing: true,
     });
 
     if (!result.canceled) {
-      const uri = result.assets?.[0]?.uri || result.uri;
-      setImage(uri);
+      const pickedUri = result.assets?.[0]?.uri;
+      if (pickedUri) {
+        setImage(pickedUri);
+      } else {
+        Alert.alert("이미지를 불러오지 못했습니다.");
+      }
     }
   };
 
@@ -43,9 +48,6 @@ const WriteScreen = () => {
       const userId = await AsyncStorage.getItem('userId');
       const token = await AsyncStorage.getItem('token');
 
-      console.log('🧾 userId:', userId);
-      console.log('🔐 token:', token);
-
       if (!userId || !token) {
         throw new Error('로그인이 필요합니다.');
       }
@@ -53,14 +55,22 @@ const WriteScreen = () => {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
+      formData.append('userId', userId.toString());
+      formData.append('author', '익명');
 
-      if (image) {
-        formData.append('image', {
-          uri: image,
-          name: 'post.jpg',
-          type: 'image/jpeg',
-        });
-      }
+     if (image) {
+  const imageData = {
+    uri: image,
+    name: 'post.jpg',
+    type: 'image/jpeg',
+  };
+  console.log('📸 이미지 데이터 확인:', imageData); // ✅ 여기 로그 추가
+  formData.append('image', imageData);
+}
+
+for (let pair of formData.entries()) {
+  console.log(`📦 FormData key=${pair[0]}:`, pair[1]);
+}
 
       await createPost(formData, token);
       Alert.alert('게시글이 등록되었습니다.');
@@ -72,9 +82,9 @@ const WriteScreen = () => {
   };
 
   return (
-    <View style={{ top: 30, flex: 1, backgroundColor: '#fff', padding: 20 }}>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* 상단 바 */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={30} color="black" />
         </TouchableOpacity>
@@ -86,42 +96,68 @@ const WriteScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* 제목 입력 */}
-      <TextInput
-        placeholder="제목"
-        value={title}
-        onChangeText={setTitle}
-        style={{
-          fontSize: 18,
-          fontWeight: 'bold',
-          marginTop: 20,
-          borderBottomWidth: 1,
-          borderBottomColor: '#ccc',
-          paddingBottom: 5,
-        }}
-      />
 
-      {/* 본문 입력 */}
-      <TextInput
-        placeholder="본문에 #을 이용해 태그를 입력해보세요!"
-        value={content}
-        onChangeText={setContent}
-        multiline
-        style={{
-          fontSize: 16,
-          marginTop: 20,
-          textAlignVertical: 'top',
-          height: 300,
-        }}
-      />
+      {/* 입력창 + 이미지 영역 */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        >
+          <TextInput
+            placeholder="제목"
+            value={title}
+            onChangeText={setTitle}
+            style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              marginTop: 20,
+              borderBottomWidth: 1,
+              borderBottomColor: '#ccc',
+              paddingBottom: 5,
+            }}
+          />
 
-      {/* 선택된 이미지 미리보기 */}
-      {image && (
-        <Image
-          source={{ uri: image }}
-          style={{ width: '100%', height: 200, marginTop: 20, borderRadius: 10 }}
-        />
-      )}
+          <TextInput
+            placeholder="본문에 #을 이용해 태그를 입력해보세요!"
+            value={content}
+            onChangeText={setContent}
+            multiline
+            style={{
+              fontSize: 16,
+              marginTop: 20,
+              textAlignVertical: 'top',
+              height: 300,
+            }}
+          />
+
+        {image && (
+  <View style={{ position: 'relative', marginTop: -150 }}>
+    <Image
+      source={{ uri: image }}
+      style={{ width: '100%', height: 500, borderRadius: 10 }}
+      resizeMode="cover"
+    />
+    <TouchableOpacity
+      onPress={() => setImage(null)}
+      style={{
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 8,
+        borderRadius: 20,
+      }}
+    >
+      <Icon name="close" size={20} color="white" />
+    </TouchableOpacity>
+  </View>
+)}
+
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* 하단 툴바 */}
       <View style={{

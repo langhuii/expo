@@ -118,7 +118,7 @@ export default function App() {
         <Stack.Screen name="GroupFeed" component={GroupFeedScreen} />
         <Stack.Screen name="GroupChat" component={GroupChatScreen} />
         <Stack.Screen name="MemberProfile" component={MemberProfileScreen} />
-        <Stack.Screen name="StoryScreen" component={StoryScreen} /> {/* ✅ 추가된 스크린 */}
+        <Stack.Screen name="StoryScreen" component={StoryScreen} /> 
       </Stack.Navigator>
     </NavigationContainer>
   );

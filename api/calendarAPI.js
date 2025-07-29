@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_BASE = "http://124.50.249.203:8080/api/calendar";
+const API_BASE = "http://172.16.105.189:8080/api/calendar";
 
 // 🟢 사용자 캘린더 조회
 export const fetchCalendarEntries = async () => {
@@ -21,7 +21,7 @@ export const saveCalendarEntry = async (userId, date, comment, emoji) => {
   if (!token || !userId) throw new Error("토큰 또는 userId 없음");
 
   await axios.post(
-    `http://124.50.249.203:8080/api/calendar/${userId}`,
+    `http://172.16.105.189:8080/api/calendar/${userId}`,
     { date, comment, emoji },
     { headers: { Authorization: `Bearer ${token}` } }
   );

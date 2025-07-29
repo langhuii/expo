@@ -57,7 +57,7 @@ const StoryScreen = () => {
         .map((story, index) => (
           <TouchableOpacity key={index} onPress={() => setSelectedStory(story)}>
             <Image
-              source={{ uri: `http://124.50.249.203:8080${story.imageUrl}` }}
+              source={{ uri: `http://172.16.105.189:8080${story.imageUrl}` }}
               style={{ width: 60, height: 60, borderRadius: 30, marginRight: 10 }}
               onError={() => console.log('🛑 이미지 로딩 실패:', story.imageUrl)}
             />
@@ -70,7 +70,7 @@ const StoryScreen = () => {
         <Modal visible transparent>
           <View style={{ flex: 1, backgroundColor: '#000000cc', justifyContent: 'center', alignItems: 'center' }}>
             <Image
-              source={{ uri: `http://124.50.249.203:8080${selectedStory.imageUrl}` }}
+              source={{ uri: `http://172.16.105.189:8080${selectedStory.imageUrl}` }}
               style={{ width: '90%', height: '70%', borderRadius: 15 }}
               resizeMode="contain"
             />

@@ -15,7 +15,7 @@ import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
 const screenWidth = Dimensions.get('window').width;
-const BASE_URL = 'http://124.50.249.203:8080';
+const BASE_URL = 'http://172.16.105.189:8080';
 
 const parseJwt = (token) => {
   try {

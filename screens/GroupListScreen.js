@@ -16,7 +16,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { fetchGroups, joinGroup } from "../api/groupAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://124.50.249.203:8080"; 
+const BASE_URL = "http://172.16.105.189:8080"; 
 
 const FloatingMenu = ({ visible, setVisible, selectedGroup, emotionMap,  userId,handleDeleteGroup }) => {
 

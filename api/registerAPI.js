@@ -3,7 +3,7 @@
 import axios from "axios";
 import { Alert } from "react-native";
 
-const API_BASE = "http://124.50.249.203:8080/api";
+const API_BASE = "http://172.16.105.189:8080/api";
 
 export const sendVerificationCode = async (email) => {
   try {

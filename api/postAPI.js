@@ -1,7 +1,7 @@
 // 📦 api/postApi.js
 import axios from 'axios';
 
-const POST_API = 'http://124.50.249.203:8080/admin/posts';
+const POST_API = 'http://172.16.105.189:8080/admin/posts';
 
 // 게시글 목록 조회
 export const fetchPosts = async (token) => {

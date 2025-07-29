@@ -9,32 +9,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchPosts, likePost } from '../api/postAPI';
 import { fetchStories, uploadImage, uploadStory } from '../api/storyAPI'; // 🟣 스토리 관련 API 추가
+import { deleteStory } from '../api/storyAPI';
 
 const FeedScreen = () => {
   const navigation = useNavigation();
-
-  // ✅ 임시 게시글 데이터
-  const [posts, setPosts] = useState([
-    {
-      id: '1',
-      user: 'Brian K',
-      date: '2024.12.19',
-      likes: 2400,
-      comments: 0,
-      image: require('../assets/post1.jpg'),
-      profile: require('../assets/profile1.jpg'),
-    },
-    {
-      id: '2',
-      user: 'Felix',
-      date: '2024.12.19',
-      likes: 1800,
-      comments: 0,
-      image: require('../assets/post2.jpg'),
-      profile: require('../assets/profile2.jpg'),
-    },
-  ]);
-
+  const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]); // 🟣 추가
   const [selectedStory, setSelectedStory] = useState(null); // 🟣 추가
   const [selectedPostId, setSelectedPostId] = useState(null);
@@ -44,39 +23,40 @@ const FeedScreen = () => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    // loadPosts(); // ✅ 실제 게시글 API 호출은 현재 비활성화 (임시 게시글만 사용)
+    loadPosts();
     loadStories(); // 🟣 스토리 불러오기
   }, []);
 
   const loadPosts = async () => {
-    try {
-      console.log('📥 게시글 로딩 시작');
-      const token = await AsyncStorage.getItem('token');
-      if (!token) throw new Error('로그인이 필요합니다.');
-      const data = await fetchPosts(token);
-      console.log('✅ 게시글 로딩 완료:', data); // 이거 찍어보기
-      setPosts(data);
-    } catch (error) {
-      console.error('게시글 불러오기 실패:', error.response?.data || error.message || error);
-    }
-  };
+  try {
+    console.log('📥 게시글 로딩 시작');
+    const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('로그인이 필요합니다.');
+    const data = await fetchPosts(token);
+    console.log('✅ 게시글 로딩 완료:', data); // 이거 찍어보기
+    setPosts(data);
+  } catch (error) {
+    console.error('게시글 불러오기 실패:', error.response?.data || error.message || error);
+  }
+};
 
-  const loadStories = async () => {
-    try {
-      console.log('📥 스토리 로딩 시작');
-      const data = await fetchStories();
-      setStories(data);
-    } catch (error) {
-      console.error('스토리 불러오기 실패:', error.response?.data || error.message || error);
-    }
-  };
+const loadStories = async () => {
+  try {
+    console.log('📥 스토리 로딩 시작');
+    const data = await fetchStories();
+    
+    setStories(data);
+  } catch (error) {
+    console.error('스토리 불러오기 실패:', error.response?.data || error.message || error);
+  }
+};
 
   const handleLike = async (postId) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) throw new Error('로그인이 필요합니다.');
       await likePost(postId, token);
-      // loadPosts(); // ✅ 좋아요 후 새로고침 비활성화 (임시 게시글이므로)
+      loadPosts();
     } catch (error) {
       console.error('좋아요 실패:', error);
     }
@@ -136,6 +116,18 @@ const FeedScreen = () => {
     }
   };
 
+  const handleDeleteStory = async (storyId) => {
+  try {
+    await deleteStory(storyId);
+    Alert.alert('삭제 완료', '스토리가 삭제되었습니다.');
+    setSelectedStory(null);  // 모달 닫기
+    await loadStories();     // 스토리 목록 갱신
+  } catch (error) {
+    console.error('스토리 삭제 실패:', error.response?.data || error.message);
+    Alert.alert('삭제 실패', '스토리를 삭제하는 중 오류가 발생했습니다.');
+  }
+};
+
   return (
     <View style={{ flex: 1, backgroundColor: '#FAE3B4' }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', padding: 10 }}>피드</Text>
@@ -146,7 +138,7 @@ const FeedScreen = () => {
           <View
             style={{
               width: 60,
-              height: 55,
+              height: 60,
               borderRadius: 30,
               borderWidth: 2,
               borderColor: '#FFA500',
@@ -162,7 +154,7 @@ const FeedScreen = () => {
           <TouchableOpacity key={index} onPress={() => setSelectedStory(story)}>
             <Image
               source={{ uri: story.imageUrl }}
-              style={{ width: 60, height: 55, borderRadius: 30, marginHorizontal: 5 }}
+              style={{ width: 60, height: 60, borderRadius: 30, marginHorizontal: 5 }}
               onError={() => console.log('🛑 이미지 로딩 실패:', story.imageUrl)}
             />
           </TouchableOpacity>
@@ -174,13 +166,20 @@ const FeedScreen = () => {
         <Modal visible transparent>
           <View style={{ flex: 1, backgroundColor: '#000000cc', justifyContent: 'center', alignItems: 'center' }}>
             <Image
-              source={{ uri: selectedStory.imageUrl }}
+              source={{ uri:selectedStory.imageUrl }}
               style={{ width: '90%', height: '70%' }}
               resizeMode="contain"
             />
             <TouchableOpacity onPress={() => setSelectedStory(null)} style={{ marginTop: 20 }}>
               <Text style={{ color: 'white', fontSize: 18 }}>닫기</Text>
             </TouchableOpacity>
+
+              {/* ✅ 삭제 버튼 추가 */}
+            <TouchableOpacity onPress={() => handleDeleteStory(selectedStory.id)}
+          style={{ marginTop: 10, backgroundColor: '#FF5555', padding: 10, borderRadius: 5 }}
+      >
+        <Text style={{ color: 'white', fontSize: 16 }}>삭제</Text>
+      </TouchableOpacity>
           </View>
         </Modal>
       )}
@@ -192,14 +191,14 @@ const FeedScreen = () => {
         renderItem={({ item }) => (
           <View style={{ margin: 20, padding: 15, backgroundColor: '#FFF8DC', borderRadius: 10 }}>
             <TouchableOpacity onPress={() => handleProfilePress(item)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Image source={item.profile} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
+              <Image source={{ uri: item.profileUrl || '' }} style={{ width: 30, height: 30, borderRadius: 15, marginRight: 5 }} />
               <View>
                 <Text>{item.user || '알 수 없음'}</Text>
                 <Text style={{ fontSize: 12, color: 'gray' }}>{item.date || ''}</Text>
               </View>
             </TouchableOpacity>
 
-            <Image source={item.image} style={{ width: '100%', height: 250, borderRadius: 10, marginTop: 10 }} />
+            <Image source={{ uri: item.imageUrl || '' }} style={{ width: '100%', height: 250, borderRadius: 10, marginTop: 10 }} />
 
             <View style={{ flexDirection: 'row', marginTop: 10 }}>
               <TouchableOpacity onPress={() => handleLike(item.id)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
