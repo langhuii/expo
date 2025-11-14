@@ -18,7 +18,7 @@ import axios from "axios";
 import * as ImageManipulator from "expo-image-manipulator";
 import { updateUserProfile } from "../api/userAPI";
 
-const BASE_URL = "http://172.16.105.189:8080";
+const BASE_URL = "https://43eca66ba2c5.ngrok-free.app";
 
 export default function MemberProfileScreen() {
   const navigation = useNavigation();

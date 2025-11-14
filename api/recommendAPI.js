@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://172.16.105.189:8080"; //백주소
+const BASE_URL = "https://43eca66ba2c5.ngrok-free.app"; //백주소
 
 export const fetchRecommendations = async (emotion) => {
   try {

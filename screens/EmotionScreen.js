@@ -27,7 +27,7 @@ export default function EmotionScreen({ navigation }) {
 
       // 1단계: 감정 분석
       const analyzeRes = await axios.post(
-        "http://172.16.105.189:8080/api/emotion/analyze",
+        "https://43eca66ba2c5.ngrok-free.app/api/emotion/analyze",
         { text: emotion },
         { headers }
       );
@@ -37,14 +37,14 @@ export default function EmotionScreen({ navigation }) {
 
       // 2단계: 감정 기록
       await axios.post(
-        "http://172.16.105.189:8080/api/recommend",
+        "https://43eca66ba2c5.ngrok-free.app/api/recommend",
         { text: detectedEmotion },
         { headers }
       );
 
       // 3단계: 추천 콘텐츠 요청
       const recommendRes = await axios.post(
-        "http://172.16.105.189:8080/api/recommend",
+        "https://43eca66ba2c5.ngrok-free.app/api/recommend",
         { emotion: detectedEmotion },
         { headers }
       );

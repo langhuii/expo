@@ -1,97 +1,89 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  Dimensions,
-  ActivityIndicator,
-  TouchableOpacity
+  View, Text, StyleSheet, ScrollView, Image,
+  Dimensions, ActivityIndicator, TouchableOpacity
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart } from 'react-native-chart-kit';
-import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { client } from '../api/client'; // ✅ 공통 axios 인스턴스
 
 const screenWidth = Dimensions.get('window').width;
-const BASE_URL = 'http://172.16.105.189:8080';
 
-const parseJwt = (token) => {
-  try {
-    if (!token) throw new Error('토큰 없음');
-
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-
-    const parsed = JSON.parse(jsonPayload);
-    console.log('✅ JWT Payload:', parsed);
-    return parsed;
-  } catch (e) {
-    console.error('❌ JWT 파싱 실패:', e);
-    return null;
-  }
-};
+// baseURL이 ".../api"라면 호스트 부분만 뽑기
+const getApiOrigin = () => (client.defaults.baseURL || '').replace(/\/api\/?$/, '');
 
 export default function HomeScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [emotionStats, setEmotionStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const inFlightRef = useRef(false); // 🔒 중복 호출 방지
+
+  const logAxiosError = (err) => {
+    const r = err?.response;
+    console.log("❌ API 실패:",
+      r?.status, r?.config?.method?.toUpperCase(), r?.config?.url);
+    console.log("❌ req headers:", r?.config?.headers);
+    console.log("❌ res data:", r?.data);
+  };
+
+  const fetchData = async () => {
+    if (inFlightRef.current) return;   // 🔒 중복 방지
+    inFlightRef.current = true;
+
+    setLoading(true);
+    try {
+      // 1) 🆔 userId 확보 (AsyncStorage 우선, 없으면 /users/me)
+      let userId = await AsyncStorage.getItem('userId');
+      if (!userId) {
+        const meRes = await client.get('/users/me');
+        userId = String(meRes.data.id ?? meRes.data.userId);
+        await AsyncStorage.setItem('userId', userId);
+      }
+      console.log('✔️ userId(숫자) 사용:', userId);
+
+      // 2) 👤 프로필 조회 (실패 시 기본값)
+      try {
+        const profileRes = await client.get(`/users/${userId}`);
+        const uname = (profileRes.data?.username ?? '').trim();
+        setUsername(uname);
+
+        const raw = profileRes.data?.profileImageUrl;
+        if (raw) {
+          const full = raw.startsWith('http') ? raw : `${getApiOrigin()}${raw}`;
+          setProfileImageUrl(`${full}?t=${Date.now()}`); // 캐시 무효화
+        } else {
+          setProfileImageUrl(null);
+        }
+      } catch (e) {
+        logAxiosError(e);
+        // 404/500 등 어떤 이유로든 프로필 실패 → 기본값
+        const storedName = (await AsyncStorage.getItem('username')) || '';
+        setUsername(storedName.trim() || '사용자');
+        setProfileImageUrl(null);
+      }
+
+      // 3) 📊 감정 통계 조회 (실패 시 0 데이터)
+      try {
+        const statsRes = await client.get(`/emotion/stats/${userId}`);
+        setEmotionStats(statsRes.data);
+      } catch (e) {
+        logAxiosError(e);
+        setEmotionStats(null); // 차트는 0으로 표시됨
+      }
+
+    } catch (error) {
+      logAxiosError(error);
+    } finally {
+      setLoading(false);
+      inFlightRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const decoded = parseJwt(token);
-
-        if (!decoded) {
-          console.error('❌ 디코딩 실패로 인해 사용자 정보를 불러올 수 없습니다.');
-          setLoading(false);
-          return;
-        }
-
-        const userId = decoded.userId || decoded.id || decoded.sub;
-        console.log('✔️ 유저 아이디:', userId);
-        await AsyncStorage.setItem('userId', userId.toString());
-
-        const profileRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        console.log('🎯 백엔드 프로필 응답:', profileRes.data);
-        setUsername(profileRes.data.username);
-        if (profileRes.data.profileImageUrl) {
-            const refreshed = `${BASE_URL}${profileRes.data.profileImageUrl}?t=${Date.now()}`;
-            setProfileImageUrl(refreshed);
-          } else {
-            setProfileImageUrl(null);
-          }
-        const statsRes = await axios.get(`${BASE_URL}/api/emotion/stats/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log('📊 감정 통계 응답:', statsRes.data);
-        setEmotionStats(statsRes.data);
-      } catch (error) {
-        console.error('데이터 로딩 오류:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData(); // 최초 실행
-
-    const unsubscribe = navigation.addListener('focus', () => {
-      fetchData();
-    });
-
+    fetchData();
+    const unsubscribe = navigation.addListener('focus', fetchData);
     return unsubscribe;
   }, [navigation]);
 
@@ -99,7 +91,6 @@ export default function HomeScreen({ navigation }) {
     ? {
         labels: Object.keys(emotionStats),
         datasets: [{ data: Object.values(emotionStats).map(v => v * 100) }]
-        
       }
     : {
         labels: ['😀', '😭', '😡', '😑', '😫'],
@@ -142,8 +133,12 @@ export default function HomeScreen({ navigation }) {
             fromZero
             segments={5}
             yAxisInterval={1}
-            maxValue={Math.max(...Object.values(emotionStats || {}), 5)}
-            showBarTops={true}
+            maxValue={
+              emotionStats
+                ? Math.max(...Object.values(emotionStats).map(v => v * 100), 5)
+                : 100
+            }
+            showBarTops
             chartConfig={{
               backgroundColor: '#fff',
               backgroundGradientFrom: '#fff',
@@ -152,13 +147,8 @@ export default function HomeScreen({ navigation }) {
               barPercentage: 0.6,
               color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               labelColor: () => '#000',
-              propsForBackgroundLines: {
-                stroke: '#e0e0e0',
-                strokeDasharray: '',
-              },
-              propsForLabels: {
-                fontSize: 12,
-              }
+              propsForBackgroundLines: { stroke: '#e0e0e0', strokeDasharray: '' },
+              propsForLabels: { fontSize: 12 }
             }}
             style={{ marginVertical: 8, borderRadius: 16 }}
             yAxisSuffix="%"

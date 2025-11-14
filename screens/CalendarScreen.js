@@ -14,8 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   fetchCalendarEntries,
   saveCalendarEntry,
-  deleteCalendarEntry,
-  patchCalendarComment,
+  deleteCalendarEntry
 } from "../api/calendarAPI";
 
 export default function CalendarScreen({ navigation }) {
@@ -24,34 +23,25 @@ export default function CalendarScreen({ navigation }) {
   const [markedDates, setMarkedDates] = useState({});
   const [comments, setComments] = useState({});
   const [selectedEmoji, setSelectedEmoji] = useState("");
-  const [editingIndex, setEditingIndex] = useState(null);
 
   const emojiList = [" 😊 ", " 😭 ", " 😡 ", " 😖 ", " 😐 "];
 
   useEffect(() => {
     const loadData = async () => {
       try {
-
-        console.log("🔄 loadData 실행 시작");
-
-      const userId = await AsyncStorage.getItem("userId");
-      console.log("✅ userId:", userId);
-
-      if (!userId) throw new Error("userId가 없음");
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) throw new Error("userId가 없음");
 
         const entries = await fetchCalendarEntries();
-        console.log("📦 불러온 entries:", entries);
-
         let commentMap = {};
         let dateMarks = {};
 
         entries.forEach((entry) => {
-          commentMap[entry.date] = [entry.comment];
+          commentMap[entry.date] = entry.comment;
           dateMarks[entry.date] = {
             marked: true,
             dotColor: "#FF6347",
             selected: false,
-            selectedColor: "#FFEBB2",
             emoji: entry.emoji,
           };
         });
@@ -69,50 +59,50 @@ export default function CalendarScreen({ navigation }) {
 
   const handleDayPress = (day) => {
     setSelectedDate(day.dateString);
-    setComment(comments[day.dateString]?.[0] || "");
+    setComment(comments[day.dateString] || "");
     setSelectedEmoji(markedDates[day.dateString]?.emoji || "");
-    setEditingIndex(null);
+
+    // ✅ 선택된 날짜만 강조
+    setMarkedDates((prev) => {
+      const updated = {};
+      Object.keys(prev).forEach((d) => {
+        updated[d] = { ...prev[d], selected: false };
+      });
+      updated[day.dateString] = {
+        ...(prev[day.dateString] || {}),
+        selected: true,
+        emoji: prev[day.dateString]?.emoji || "",
+      };
+      return updated;
+    });
   };
-  
+
   const handleSave = async () => {
     if (!selectedDate) return;
 
     try {
       const userId = await AsyncStorage.getItem("userId");
-      if (!userId) {
-        Alert.alert("저장 실패", "userId가 없습니다.");
-        return;
-      }
-
-      console.log("📦 저장할 캘린더 데이터:", JSON.stringify({
-  userId,
-  date: selectedDate,
-  comment,
-  emoji: selectedEmoji,
-}));
-
+      if (!userId) return Alert.alert("저장 실패", "userId가 없습니다.");
 
       await saveCalendarEntry(userId, selectedDate, comment, selectedEmoji);
-      await patchCalendarComment(userId, selectedDate, comment);
+      
 
       setComments((prev) => ({
         ...prev,
-        [selectedDate]: [comment],
+        [selectedDate]: comment,
       }));
 
       setMarkedDates((prev) => ({
         ...prev,
         [selectedDate]: {
+          ...prev[selectedDate],
           marked: true,
-          dotColor: "#FF6347",
           selected: true,
-          selectedColor: "#FFEBB2",
           emoji: selectedEmoji,
         },
       }));
 
       setComment("");
-      setEditingIndex(null);
     } catch (error) {
       console.error("Error saving entry", error);
       Alert.alert("저장 실패", "감정 또는 코멘트를 저장하는 중 오류가 발생했습니다.");
@@ -121,7 +111,6 @@ export default function CalendarScreen({ navigation }) {
 
   const handleDelete = async () => {
     if (!selectedDate) return;
-
     try {
       await deleteCalendarEntry(selectedDate);
 
@@ -138,11 +127,6 @@ export default function CalendarScreen({ navigation }) {
     }
   };
 
-  const handleEdit = (index) => {
-    setComment(comments[selectedDate][index]);
-    setEditingIndex(index);
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.navTitle}>감정 캘린더</Text>
@@ -152,19 +136,30 @@ export default function CalendarScreen({ navigation }) {
           onDayPress={handleDayPress}
           markedDates={markedDates}
           style={styles.calendar}
-          dayComponent={({ date, state }) => (
-            <TouchableOpacity
-              onPress={() => handleDayPress({ dateString: date.dateString })}
-              style={styles.dayContainer}
-            >
-              <Text style={[styles.dayText, state === "disabled" && { color: "gray" }]}>
-                {date.day}
-              </Text>
-              {markedDates[date.dateString]?.emoji && (
-                <Text style={styles.emoji}>{markedDates[date.dateString].emoji}</Text>
-              )}
-            </TouchableOpacity>
-          )}
+          dayComponent={({ date, state }) => {
+            const isSelected = markedDates[date.dateString]?.selected;
+            return (
+              <TouchableOpacity
+                onPress={() => handleDayPress({ dateString: date.dateString })}
+                style={[
+                  styles.dayContainer,
+                  isSelected && styles.selectedDay, // ✅ 선택 스타일 적용
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dayText,
+                    state === "disabled" && { color: "gray" },
+                  ]}
+                >
+                  {date.day}
+                </Text>
+                {markedDates[date.dateString]?.emoji && (
+                  <Text style={styles.emoji}>{markedDates[date.dateString].emoji}</Text>
+                )}
+              </TouchableOpacity>
+            );
+          }}
         />
       </View>
 
@@ -214,25 +209,21 @@ export default function CalendarScreen({ navigation }) {
         </>
       )}
 
-      <View style={styles.memoContainer}>
-        <FlatList
-          data={comments[selectedDate] || []}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item, index }) => (
-            <View style={styles.commentItem}>
-              <Text style={styles.commentText}>{item}</Text>
-              <View style={styles.commentActions}>
-                <TouchableOpacity onPress={() => handleEdit(index)}>
-                  <Ionicons name="pencil" size={18} color="black" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDelete}>
-                  <Ionicons name="trash" size={18} color="red" />
-                </TouchableOpacity>
-              </View>
+      {selectedDate && comments[selectedDate] && (
+        <View style={styles.memoContainer}>
+          <View style={styles.commentItem}>
+            <Text style={styles.commentText}>{comments[selectedDate]}</Text>
+            <View style={styles.commentActions}>
+              <TouchableOpacity onPress={() => setComment(comments[selectedDate])}>
+                <Ionicons name="pencil" size={18} color="black" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDelete}>
+                <Ionicons name="trash" size={18} color="red" />
+              </TouchableOpacity>
             </View>
-          )}
-        />
-      </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -242,7 +233,8 @@ const styles = StyleSheet.create({
   navTitle: { fontSize: 24, fontWeight: "bold", textAlign: "center", marginVertical: 16 },
   calendarContainer: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, marginBottom: 20 },
   calendar: { borderRadius: 8 },
-  dayContainer: { alignItems: "center", justifyContent: "center" },
+  dayContainer: { alignItems: "center", justifyContent: "center", padding: 6 },
+  selectedDay: { backgroundColor: "#FFD580", borderRadius: 20 }, // ✅ 선택된 날짜 강조
   dayText: { fontSize: 16 },
   emoji: { fontSize: 18, marginTop: 2 },
   emojiContainer: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
@@ -265,7 +257,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   commentInput: { flex: 1, height: 40 },
-  memoContainer: { flex: 1, marginTop: 10 },
+  memoContainer: { marginTop: 10 },
   commentItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -278,4 +270,3 @@ const styles = StyleSheet.create({
   commentText: { fontSize: 14, flex: 1 },
   commentActions: { flexDirection: "row", gap: 10, marginLeft: 10 },
 });
-

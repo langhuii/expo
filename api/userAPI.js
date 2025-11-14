@@ -1,7 +1,6 @@
 // api/userAPI.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { BASE_URL } from "../config/config"; // 외부에서 가져옴
+import { BASE_URL } from "../config/config";
 
 // ✅ 확장자 기반 MIME 타입 및 파일명 처리 함수
 const getFileInfo = (uri) => {
@@ -9,9 +8,11 @@ const getFileInfo = (uri) => {
   return {
     name: `profile.${ext}`,
     type:
-      ext === "png" ? "image/png" :
-      ext === "jpg" || ext === "jpeg" ? "image/jpeg" :
-      "application/octet-stream",
+      ext === "png"
+        ? "image/png"
+        : ext === "jpg" || ext === "jpeg"
+        ? "image/jpeg"
+        : "application/octet-stream",
   };
 };
 
@@ -19,22 +20,16 @@ export const updateUserProfile = async (userId, name, imageUri) => {
   const token = await AsyncStorage.getItem("token");
   const formData = new FormData();
 
-  // ✅ 반드시 username만 담기
-  formData.append("data", JSON.stringify({ username: name }));
+  // ✅ username을 직접 필드로 추가
+  formData.append("username", name);
 
   // ✅ 이미지가 있을 경우만 첨부
   if (imageUri) {
-    const ext = imageUri.split(".").pop().toLowerCase();
-    const mimeType = ext === "png"
-      ? "image/png"
-      : ext === "jpg" || ext === "jpeg"
-      ? "image/jpeg"
-      : "application/octet-stream";
-
+    const { name: fileName, type } = getFileInfo(imageUri);
     formData.append("profileImage", {
       uri: imageUri,
-      name: `profile.${ext}`,
-      type: mimeType,
+      name: fileName,
+      type,
     });
   }
 
@@ -42,6 +37,7 @@ export const updateUserProfile = async (userId, name, imageUri) => {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
+      // fetch + FormData는 Content-Type을 자동으로 multipart/form-data로 설정
     },
     body: formData,
   });
@@ -54,5 +50,3 @@ export const updateUserProfile = async (userId, name, imageUri) => {
 
   return await response.json();
 };
-
-

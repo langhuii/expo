@@ -38,48 +38,59 @@ const WriteScreen = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!title || !content) {
-      Alert.alert('제목과 내용을 모두 입력해주세요.');
-      return;
+const handleSubmit = async () => {
+  if (!title || !content) {
+    Alert.alert('제목과 내용을 모두 입력해주세요.');
+    return;
+  }
+
+  try {
+    const userId = await AsyncStorage.getItem('userId');
+    const token = await AsyncStorage.getItem('token');
+
+    if (!userId || !token) {
+      throw new Error('로그인이 필요합니다.');
     }
 
-    try {
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('userId', userId.toString());
+    formData.append('author', '익명');
 
-      if (!userId || !token) {
-        throw new Error('로그인이 필요합니다.');
-      }
-
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('content', content);
-      formData.append('userId', userId.toString());
-      formData.append('author', '익명');
-
-     if (image) {
-  const imageData = {
-    uri: image,
-    name: 'post.jpg',
-    type: 'image/jpeg',
-  };
-  console.log('📸 이미지 데이터 확인:', imageData); // ✅ 여기 로그 추가
-  formData.append('image', imageData);
-}
-
-for (let pair of formData.entries()) {
-  console.log(`📦 FormData key=${pair[0]}:`, pair[1]);
-}
-
-      await createPost(formData, token);
-      Alert.alert('게시글이 등록되었습니다.');
-      navigation.goBack();
-    } catch (error) {
-      console.error('🛑 게시글 등록 실패:', error.message);
-      Alert.alert('게시글 등록 실패', error.message || '오류가 발생했습니다.');
+    if (image) {
+      const imageData = {
+        uri: image,
+        name: 'post.jpg',
+        type: 'image/jpeg',
+      };
+      console.log('📸 선택된 이미지 데이터:', imageData); // ✅ 이미지 파일 확인
+      formData.append('image', imageData);
     }
-  };
+
+    // ✅ FormData에 들어간 값 전체 확인
+    for (let pair of formData.entries()) {
+      console.log(`📦 FormData key=${pair[0]}:`, pair[1]);
+    }
+
+    // 서버 요청
+    const response = await createPost(formData, token);
+
+    // ✅ 서버 응답 확인
+    console.log('📥 서버 응답:', response);
+
+    if (response?.imageUrl) {
+      console.log('🖼️ 서버가 내려준 이미지 URL:', response.imageUrl);
+    }
+
+    Alert.alert('게시글이 등록되었습니다.');
+    navigation.goBack();
+  } catch (error) {
+    console.error('🛑 게시글 등록 실패:', error.message);
+    Alert.alert('게시글 등록 실패', error.message || '오류가 발생했습니다.');
+  }
+};
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>

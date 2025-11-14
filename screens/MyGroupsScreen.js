@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchMyGroups, leaveGroup } from "../api/groupAPI";
 
-const BASE_URL = "http://172.16.105.189:8080";
+const BASE_URL = "https://43eca66ba2c5.ngrok-free.app";
 
 export default function MyGroupsScreen({ navigation }) {
   const [myGroups, setMyGroups] = useState([]);
